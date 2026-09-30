@@ -26,6 +26,7 @@ Game of Fortunes is a responsive raffle web app for creating games, managing par
 | `/games/new` | Create a game |
 | `/games/:id/join` | Join through a game invitation |
 | `/plans` | Plans and subscription checkout |
+| `/premium` | Premium coming-soon page |
 | `/download` | Android APK download |
 | `/donation` | Project support QR code |
 | `/raffle-unavailable` | Missing, unavailable, or expired raffle/invitation |

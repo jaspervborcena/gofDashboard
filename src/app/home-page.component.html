@@ -4,12 +4,13 @@
       <img src="assets/gofv2logo.png" alt="Game of Fortunes" />
     </a>
     <div class="hero-copy">
-      <h1>Your lucky number is waiting.</h1>
+      <h1>Your winning code is waiting.</h1>
+      <p class="home-description">Game of Fortunes is a fun raffle app for Christmas parties, birthdays, team buildings, company events, school activities, livestreams, and community gatherings. Create a game, invite participants, and let the wheel decide the winners in seconds.</p>
     </div>
 
     <div class="hero-panel">
       <div class="game-card">
-        <h2>Roll for your lucky number</h2>
+        <h2>Roll to reveal your winning code.</h2>
         <a class="card-preview slot-preview slot-preview-link" routerLink="/raffles" aria-label="Open raffles">
           <div class="slot-top">RAFFLES</div>
           <div class="mini-slot">
@@ -22,19 +23,19 @@
     </div>
 
     <div class="home-plans" aria-label="Plans">
-      <article class="home-plan home-plan-download">
-        <a class="home-download-button" routerLink="/download" aria-label="Download the Android app" title="Download the Android app">
+      <a class="home-plan home-plan-download" routerLink="/download" aria-label="Download the Android app" title="Download the Android app">
+        <span class="home-download-button">
           Download
-        </a>
-        <a class="home-download-icon-link" routerLink="/download" aria-label="Download the Android app" title="Download the Android app">
-          <img class="home-download-icon" src="assets/download.png" alt="Android app" />
-        </a>
-      </article>
+        </span>
+        <span class="home-download-icon-link" aria-hidden="true">
+          <img class="home-download-icon" src="assets/download.png" alt="" />
+        </span>
+      </a>
       <a class="home-plan home-plan-featured" routerLink="/plans">
         <strong>PLANS</strong>
         <span>Choose your plan</span>
       </a>
-      <a class="home-plan" routerLink="/plans">
+      <a class="home-plan" routerLink="/premium">
         <strong>PREMIUM</strong>
         <span>Coming soon</span>
       </a>

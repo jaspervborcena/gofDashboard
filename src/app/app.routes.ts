@@ -8,6 +8,7 @@ import { PlansPageComponent } from './plans-page.component';
 import { RaffleUnavailablePageComponent } from './raffle-unavailable-page.component';
 import { DownloadPageComponent } from './download-page.component';
 import { DonationPageComponent } from './donation-page.component';
+import { PremiumPageComponent } from './premium-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomePageComponent },
@@ -15,6 +16,7 @@ export const routes: Routes = [
   { path: 'plans', component: PlansPageComponent },
   { path: 'download', component: DownloadPageComponent },
   { path: 'donation', component: DonationPageComponent },
+  { path: 'premium', component: PremiumPageComponent },
   { path: 'games/new', component: GameSetupPageComponent },
   { path: 'games/:id/join', component: GameInvitationPageComponent },
   { path: 'raffle-unavailable', component: RaffleUnavailablePageComponent },
