@@ -26,12 +26,13 @@ export class PlansPageComponent implements AfterViewChecked, OnDestroy {
   private closeDialogTimer?: number;
   private mayaStatusTimer?: number;
   private mayaStatusCheckInFlight = false;
+  paymentButtonsLoading = false;
   paymentMethod: 'paypal' | 'maya' = 'paypal';
   mayaQrImage = '';
   mayaCheckoutLoading = false;
   mayaPaymentOrderId = '';
   mayaStatusMessage = '';
-  selectedPlan: 'basic' | 'standard' = 'basic';
+  selectedPlan: 'basic' | 'standard' | 'pro' = 'basic';
   duration = 1;
   promoCode = '';
   referralCode = '';
@@ -53,6 +54,7 @@ export class PlansPageComponent implements AfterViewChecked, OnDestroy {
       && this.paypalButtonContainer
       && this.cardButtonContainer) {
       this.paypalRenderStarted = true;
+      this.paymentButtonsLoading = true;
       void this.renderPayPalButtons();
     }
   }
@@ -64,11 +66,11 @@ export class PlansPageComponent implements AfterViewChecked, OnDestroy {
   }
 
   get planName(): string {
-    return this.selectedPlan === 'basic' ? 'Basic' : 'Standard';
+    return this.selectedPlan === 'pro' ? 'Pro' : this.selectedPlan === 'basic' ? 'Basic' : 'Standard';
   }
 
   get monthlyPrice(): number {
-    return this.selectedPlan === 'basic' ? 149 : 599;
+    return { basic: 149, standard: 599, pro: 1799 }[this.selectedPlan];
   }
 
   get totalPrice(): number {
@@ -76,7 +78,7 @@ export class PlansPageComponent implements AfterViewChecked, OnDestroy {
     return this.couponValid ? Math.max(0, baseTotal - this.couponDiscount) : baseTotal;
   }
 
-  openUpgrade(plan: 'basic' | 'standard'): void {
+  openUpgrade(plan: 'basic' | 'standard' | 'pro'): void {
     this.clearCloseDialogTimer();
     this.stopMayaPaymentPolling();
     this.destroyPayPalButtons();
@@ -295,6 +297,7 @@ export class PlansPageComponent implements AfterViewChecked, OnDestroy {
     const cardHost = this.cardButtonContainer?.nativeElement;
     if (!user || !paypalHost || !cardHost) {
       this.paymentButtonsError('Sign in to load PayPal and card checkout.');
+      this.paymentButtonsLoading = false;
       return;
     }
 
@@ -345,6 +348,8 @@ export class PlansPageComponent implements AfterViewChecked, OnDestroy {
       }
     } catch (error) {
       this.paymentButtonsError(error instanceof Error ? error.message : 'PayPal checkout could not be loaded.');
+    } finally {
+      this.paymentButtonsLoading = false;
     }
   }
 

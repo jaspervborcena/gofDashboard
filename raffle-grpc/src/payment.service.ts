@@ -4,7 +4,7 @@ import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import type { AuthenticatedUser } from './firebase-auth.guard';
 
 type Provider = 'paypal' | 'maya';
-type PlanId = 'basic' | 'standard';
+type PlanId = 'basic' | 'standard' | 'pro';
 
 interface CreatePaymentRequest {
   provider: Provider;
@@ -54,12 +54,14 @@ interface MayaCheckoutRecord {
 
 const PACKAGE_PRICES: Record<PlanId, number> = {
   basic: 149,
-  standard: 599
+  standard: 599,
+  pro: 1799
 };
 
 const MONTHLY_SPINS: Record<PlanId, number> = {
   basic: 500,
-  standard: 3000
+  standard: 1000,
+  pro: 2000
 };
 
 function firestore() {
@@ -73,7 +75,7 @@ export class PaymentService {
     if (request.provider !== 'paypal' && request.provider !== 'maya') {
       throw new BadRequestException('Unsupported payment provider.');
     }
-    if (request.packageId !== 'basic' && request.packageId !== 'standard') {
+    if (request.packageId !== 'basic' && request.packageId !== 'standard' && request.packageId !== 'pro') {
       throw new BadRequestException('Unsupported subscription package.');
     }
 

@@ -1,4 +1,4 @@
-export type SubscriptionPlan = 'freemium' | 'basic' | 'standard';
+export type SubscriptionPlan = 'freemium' | 'basic' | 'standard' | 'pro';
 export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'expired';
 
 export const FREE_MAX_PLAYERS = 160;
@@ -6,7 +6,7 @@ export const FREE_MONTHLY_SPINS = 25;
 
 export interface PlanDefinition {
   id: SubscriptionPlan;
-  name: 'Free' | 'Basic' | 'Standard';
+  name: 'Free' | 'Basic' | 'Standard' | 'Pro';
   priceCents: number;
   currency: 'PHP';
   billingInterval: 'month';
@@ -54,7 +54,7 @@ export const planCatalog: PlanDefinition[] = [
     priceCents: 14900,
     currency: 'PHP',
     billingInterval: 'month',
-    maxPlayers: 2000,
+    maxPlayers: 700,
     monthlySpins: 500,
     adsEnabled: false,
     features: ['Ad-free experience', 'Priority support'],
@@ -66,10 +66,22 @@ export const planCatalog: PlanDefinition[] = [
     priceCents: 59900,
     currency: 'PHP',
     billingInterval: 'month',
-    maxPlayers: 10000,
-    monthlySpins: 3000,
+    maxPlayers: 3000,
+    monthlySpins: 1000,
     adsEnabled: false,
     features: ['Advanced raffle tools', 'Full raffle history', 'Early access to new features'],
+    active: true
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    priceCents: 179900,
+    currency: 'PHP',
+    billingInterval: 'month',
+    maxPlayers: 10000,
+    monthlySpins: 2000,
+    adsEnabled: false,
+    features: ['All advanced raffle tools', 'Full raffle history', 'Priority support', 'Early access to new features'],
     active: true
   }
 ];

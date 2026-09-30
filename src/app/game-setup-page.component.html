@@ -8,22 +8,22 @@
     </div>
 
     <form class="setup-form" (ngSubmit)="createGame()">
-      <label>
+      <label class="game-name-field">
         Game name
         <input [(ngModel)]="gameName" name="gameName" required maxlength="80" placeholder="Friday night raffle" />
       </label>
 
-      <label>
+      <label class="start-time-field">
         Start time
         <input [(ngModel)]="startAtDraft" (ngModelChange)="onStartTimeDraftChange($event)" name="startAt" type="datetime-local" required />
       </label>
 
-      <label>
+      <label class="close-time-field">
         Close time
         <input [(ngModel)]="closeAtDraft" (ngModelChange)="onCloseTimeDraftChange($event)" [min]="startAt" [max]="latestCloseAt" name="closeAt" type="datetime-local" required />
       </label>
 
-      <label>
+      <label class="digit-count-field">
         Number of digits
         <select [(ngModel)]="digitCount" name="digitCount">
           <option [ngValue]="3">3 digits</option>
@@ -33,7 +33,7 @@
         </select>
       </label>
 
-      <fieldset>
+      <fieldset class="number-style-field">
         <legend>Participant number style</legend>
         <label class="choice">
           <input type="radio" [(ngModel)]="numberMode" name="numberMode" value="random" />
@@ -45,7 +45,7 @@
         </label>
       </fieldset>
 
-      <label>
+      <label class="draw-mode-field">
         Draw mode
         <select [(ngModel)]="spinMode" name="spinMode">
           <option value="simultaneous">Simultaneous</option>
@@ -53,9 +53,9 @@
         </select>
       </label>
 
-      <label>
+      <label class="remarks-field">
         Remarks
-        <textarea [(ngModel)]="remarks" name="remarks" rows="4" maxlength="500" placeholder="Add game details or instructions for participants"></textarea>
+        <textarea [(ngModel)]="remarks" name="remarks" rows="3" maxlength="500" placeholder="Add game details or instructions for participants"></textarea>
       </label>
 
       <p class="error-message" *ngIf="errorMessage">
@@ -65,7 +65,7 @@
           <a routerLink="/signin" [queryParams]="{ returnUrl: '/games/new' }">Sign in now</a>
         </ng-template>
       </p>
-      <button class="primary-btn" type="submit" [disabled]="isSaving">
+      <button class="primary-btn create-game-submit" type="submit" [disabled]="isSaving">
         {{ isSaving ? 'Creating game...' : 'Create game' }}
       </button>
     </form>

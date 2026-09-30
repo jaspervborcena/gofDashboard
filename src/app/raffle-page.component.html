@@ -1,5 +1,5 @@
 <main class="app-shell" *ngIf="raffle; else loading">
-  <section class="raffle-detail">
+  <section class="raffle-detail" [class.players-view]="activeTab === 'players'">
     <div class="game-topbar">
       <a class="brand-button" routerLink="/" aria-label="Go to Game of Fortunes home">
         <img src="assets/gofv2logo.png" alt="Game of Fortunes" />
@@ -49,7 +49,7 @@
         </aside>
 
         <div class="machine-zone">
-          <div class="slot-machine-container">
+          <div class="slot-machine-container" [class.has-winner]="!!lastWinner">
             <div class="slot-machine" [style.gridTemplateColumns]="'repeat(' + reelPositions.length + ', minmax(0, 1fr))'">
               <div class="reel-column" *ngFor="let pos of reelPositions">
                 <div class="reel-tape" [style.transform]="'translateY(' + (48 - pos * 60) + 'px)'">
@@ -59,15 +59,16 @@
               </div>
             </div>
             <div class="reel-lights"></div>
-          </div>
-
-          <p class="exclusion-message" *ngIf="exclusionMessage" role="status">{{ exclusionMessage }}</p>
-          <div class="draw-result" [class.empty-result]="!lastWinner">
-            <ng-container *ngIf="lastWinner">
+            <div class="draw-result" *ngIf="lastWinner" role="dialog" aria-labelledby="winner-dialog-title">
+              <button class="winner-dialog-close" type="button" aria-label="Close winner dialog" (click)="dismissWinnerDialog()">×</button>
+              <h3 id="winner-dialog-title">Congratulations!!!</h3>
               <p class="winner-text"><strong>Winner: {{ lastWinner.number }} • {{ lastWinner.name }}</strong></p>
               <button class="view-winners exclude-winner-button" type="button" (click)="excludeLastWinner()">EXCLUDE WINNER</button>
-            </ng-container>
+            </div>
           </div>
+
+          <div class="winner-dialog-spacer" *ngIf="lastWinner" aria-hidden="true"></div>
+          <p class="exclusion-message" *ngIf="exclusionMessage" role="status">{{ exclusionMessage }}</p>
           <div class="controls">
             <p class="spin-limit-message" *ngIf="spinLimitMessage" role="alert">
               {{ spinLimitMessage }} <a routerLink="/plans">View plans</a>
@@ -110,17 +111,17 @@
         </div>
         <label class="number-toggle">
           <input type="checkbox" [(ngModel)]="useJoinedNumber" />
-          I want to enter my own number
+          I want to enter my own ticket number
         </label>
         <div class="join-row">
-          <input *ngIf="useJoinedNumber" [(ngModel)]="joinedNumber" (keydown.enter)="joinEntry()" type="text" inputmode="numeric" [attr.maxlength]="raffle.digitCount ?? 3" placeholder="Number" aria-label="Participant number" />
+          <input *ngIf="useJoinedNumber" [(ngModel)]="joinedNumber" (keydown.enter)="joinEntry()" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" spellcheck="false" [attr.maxlength]="raffle.digitCount ?? 3" placeholder="Ticket number" aria-label="Ticket number" />
           <input [(ngModel)]="joinedName" (keydown.enter)="joinEntry()" placeholder="Add your name to the raffle" />
           <button class="primary-btn" type="button" (click)="joinEntry()">Join</button>
         </div>
         <p class="save-message" *ngIf="participantLimitMessage" role="status">{{ participantLimitMessage }}</p>
         <div class="player-list">
           <div class="player-row" *ngFor="let player of visiblePlayers">
-            <span><i class="player-dot"></i>{{ formatNumber(player.assignedNumber) }} • {{ player.name }}</span>
+            <span><i class="player-dot"></i>{{ formatPlayerNumber(player) }} • {{ player.name }}</span>
           </div>
         </div>
         <div class="pagination" *ngIf="hasParticipantPagination">

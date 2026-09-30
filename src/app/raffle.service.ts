@@ -18,13 +18,14 @@ import { FREE_MONTHLY_SPINS, planCatalog, UserSubscription } from './plan-schema
 
 export type SpinMode = 'simultaneous' | 'per-digit';
 export type NumberMode = 'random' | 'ordered';
-export type SubscriptionPlan = 'free' | 'basic' | 'standard';
+export type SubscriptionPlan = 'free' | 'basic' | 'standard' | 'pro';
 
 export interface Player {
   id: string;
   userId?: string;
   name: string;
   assignedNumber: number;
+  ticketCode?: string;
   drawn: boolean;
   status?: 'active' | 'winner' | 'inactive' | 'removed';
   mobileNumber?: string;
@@ -77,6 +78,7 @@ export interface ParticipantRecord {
   name: string;
   mobileNumber?: string;
   assignedNumber: number;
+  ticketCode?: string;
   remarks?: string;
   status: 'active' | 'winner' | 'inactive' | 'removed';
   joinedAt: string;
@@ -446,6 +448,7 @@ export class RaffleService {
         userId: authUser.uid,
         name: player.name,
         assignedNumber: player.assignedNumber,
+        ...(player.ticketCode ? { ticketCode: player.ticketCode } : {}),
         status: player.status ?? 'active',
         joinedAt: new Date().toISOString(),
         ...(player.mobileNumber ? { mobileNumber: player.mobileNumber } : {}),
@@ -475,6 +478,7 @@ export class RaffleService {
       userId: authUser.uid,
       name: player.name,
       assignedNumber: player.assignedNumber,
+      ...(player.ticketCode ? { ticketCode: player.ticketCode } : {}),
       status: player.status ?? 'active',
       joinedAt: new Date().toISOString(),
       ...(player.mobileNumber ? { mobileNumber: player.mobileNumber } : {}),
@@ -599,7 +603,7 @@ export class RaffleService {
       plan = await this.getCurrentUserPlan(userId);
     } catch {
       const savedPlan = profile['plan'];
-      plan = savedPlan === 'basic' || savedPlan === 'standard' ? savedPlan : 'free';
+      plan = savedPlan === 'basic' || savedPlan === 'standard' || savedPlan === 'pro' ? savedPlan : 'free';
     }
     const catalogPlan = planCatalog.find((item) => item.id === (plan === 'free' ? 'freemium' : plan));
 
@@ -640,13 +644,13 @@ export class RaffleService {
     } catch {
       // A user without a readable subscription falls back to the profile plan.
     }
-    if (activeSubscription?.planType === 'basic' || activeSubscription?.planType === 'standard') {
+    if (activeSubscription?.planType === 'basic' || activeSubscription?.planType === 'standard' || activeSubscription?.planType === 'pro') {
       return activeSubscription.planType;
     }
 
     const snapshot = await getDoc(doc(this.firestore, 'users', userId));
     const plan = snapshot.data()?.['plan'];
-    return plan === 'basic' || plan === 'standard' ? plan : 'free';
+    return plan === 'basic' || plan === 'standard' || plan === 'pro' ? plan : 'free';
   }
 
   async ensureUserSpinFields(userId: string): Promise<void> {
@@ -843,6 +847,7 @@ export class RaffleService {
         gameUid: raffle.gameUid,
         name: player.name,
         assignedNumber: player.assignedNumber,
+        ...(player.ticketCode ? { ticketCode: player.ticketCode } : {}),
         status: player.status ?? (player.drawn ? 'winner' : 'active'),
         joinedAt: raffle.createdAt,
         ...(player.mobileNumber ? { mobileNumber: player.mobileNumber } : {}),

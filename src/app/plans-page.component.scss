@@ -6,7 +6,7 @@
 .eyebrow { margin: 1.2rem 0 0.35rem; color: #ffbb4f; font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; }
 h1 { margin: 0; color: #fff0b8; font-size: clamp(2rem, 5vw, 3.2rem); }
 .lead { color: #e0c9ff; line-height: 1.5; }
-.plans-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.5rem; align-items: stretch; }
+.plans-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-top: 1.5rem; align-items: stretch; }
 .plan-card { display: grid; gap: 0.7rem; padding: 1.2rem; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 16px; background: rgba(255, 255, 255, 0.05); }
 .plan-card.featured { border-color: rgba(255, 193, 49, 0.6); background: linear-gradient(145deg, rgba(71, 30, 38, 0.8), rgba(33, 15, 42, 0.85)); }
 .plan-label { color: #ffcf4d; font-size: 0.72rem; font-weight: 900; letter-spacing: 0.15em; }
@@ -46,7 +46,10 @@ h1 { margin: 0; color: #fff0b8; font-size: clamp(2rem, 5vw, 3.2rem); }
 .payment-method-tabs button.active { color: #241100; background: linear-gradient(90deg, #ffd34e, #ff9d1a); font-weight: 800; }
 fieldset { margin: 0; padding: 0; border: 0; }
 fieldset legend { margin-bottom: 0.7rem; }
-.paypal-checkout { display: grid; gap: 0.3rem; width: min(100%, 390px); margin: 0 auto; }
+.paypal-checkout { position: relative; display: grid; gap: 0.3rem; width: min(100%, 390px); margin: 0 auto; }
+.payment-loading { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 0.7rem; padding: 1rem; color: #eee4f0; background: #17101f; text-align: center; }
+.loading-spinner { width: 1.35rem; height: 1.35rem; flex: 0 0 auto; border: 3px solid rgba(255, 211, 78, 0.28); border-top-color: #ffd34e; border-radius: 50%; animation: payment-spin 0.75s linear infinite; }
+@keyframes payment-spin { to { transform: rotate(360deg); } }
 .paypal-checkout h3 { margin: 0.2rem 0 0; color: #fff0b8; font-size: 0.88rem; }
 .paypal-button-slot { min-height: 42px; }
 .card-button-slot { margin-bottom: 0.1rem; }

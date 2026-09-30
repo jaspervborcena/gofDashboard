@@ -114,7 +114,6 @@ textarea {
   margin: 0.75rem 0 0;
   color: #fecaca;
   font-weight: 600;
-  max-width: 560px;
 }
 
 .primary-btn,
@@ -297,35 +296,35 @@ textarea {
 }
 
 /* Reference casino welcome screen */
-.app-shell { width: 100vw; max-width: none; margin-left: calc(50% - 50vw); padding: 0.5rem 1rem 1rem; }
-.hero-card { position: relative; overflow: hidden; display: grid; justify-items: center; width: 100%; margin: 0 auto; padding: 0.45rem 1rem 0; border-color: rgba(255, 191, 43, 0.4); border-radius: 24px; background: linear-gradient(145deg, rgba(10, 5, 19, 0.98), rgba(24, 8, 31, 0.96)); box-shadow: 0 0 0 1px rgba(104, 41, 194, 0.3), 0 25px 70px rgba(0, 0, 0, 0.5); }
+.app-shell { width: 100%; max-width: 1500px; margin: 0 auto; padding: 0.5rem 1rem 1rem; }
+.hero-card { position: relative; overflow: hidden; display: grid; justify-items: center; width: 100%; margin: 0 auto; padding: 0.85rem 1.25rem 1.1rem; gap: 0.8rem; border-color: rgba(255, 191, 43, 0.4); border-radius: 24px; background: linear-gradient(145deg, rgba(10, 5, 19, 0.98), rgba(24, 8, 31, 0.96)); box-shadow: 0 0 0 1px rgba(104, 41, 194, 0.3), 0 25px 70px rgba(0, 0, 0, 0.5); }
 .home-brand { display: flex; width: fit-content; align-items: center; margin: 0 auto 0.65rem; padding: 0.4rem 0.75rem; border: 1px solid rgba(255, 187, 33, 0.55); border-radius: 16px; background: rgba(8, 4, 14, 0.75); }
 .home-brand img { display: block; width: auto; height: 68px; max-width: min(220px, 60vw); object-fit: contain; }
-.hero-card, .hero-panel { max-width: 1240px; }
+.hero-card { max-width: none; }
 .hero-copy { width: 100%; text-align: center; }
 .hero-copy > *, .hero-panel > *, .game-card > * { justify-self: center; text-align: center; }
 .hero-copy h1 { margin: 0.2rem auto 0.45rem; color: #fff0b8; font-size: clamp(1.8rem, 5vw, 3.25rem); line-height: 1.05; text-shadow: 0 3px 0 #7e3100, 0 0 22px rgba(255, 163, 20, 0.3); }
 .eyebrow { color: #ffbb4f; }
-.hero-panel { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-items: center; width: min(100%, 900px); margin: -0.15rem auto 0; text-align: center; }
-.game-card { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-items: center; width: 100%; gap: 0.25rem; padding: 0.75rem 1rem 0.85rem; border: 1px solid rgba(255, 182, 37, 0.26); border-radius: 22px; background: linear-gradient(145deg, rgba(27, 20, 35, 0.96), rgba(49, 22, 22, 0.96)); text-align: center; }
+.hero-panel { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-items: center; width: min(100%, 1100px); margin: 0.2rem auto 0; text-align: center; }
+.game-card { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; align-items: center; width: 100%; gap: 0.6rem; padding: 1rem 1.25rem 1.1rem; border: 1px solid rgba(255, 182, 37, 0.26); border-radius: 22px; background: linear-gradient(145deg, rgba(27, 20, 35, 0.96), rgba(49, 22, 22, 0.96)); text-align: center; }
 .card-eyebrow { justify-self: center; margin-inline: auto; color: #f6b3db; font-size: 0.8rem; font-weight: 800; text-align: center; }
-.game-card h2 { margin: 0.1rem 0 0.1rem; color: #fff0b8; font-size: clamp(1.25rem, 3vw, 1.8rem); }
-.game-card p { width: 100%; max-width: 760px; color: #dfc8ef; font-size: 0.88rem; line-height: 1.25; text-align: center; }
-.card-preview { justify-self: center; width: min(100%, 340px); margin: 0.55rem auto 0; padding: 0.55rem; border: 1px solid rgba(211, 96, 181, 0.5); border-radius: 20px; background: linear-gradient(145deg, #3e0a2e, #561242); box-shadow: 0 0 24px rgba(183, 28, 143, 0.2); }
+.game-card h2 { margin: 0.1rem 0 0.1rem; color: #fff0b8; font-size: clamp(1.4rem, 3vw, 2rem); }
+.game-card p { width: 100%; max-width: 760px; color: #dfc8ef; font-size: 0.98rem; line-height: 1.4; text-align: center; }
+.card-preview { justify-self: center; width: min(100%, 400px); margin: 0.65rem auto 0; padding: 0.65rem; border: 1px solid rgba(211, 96, 181, 0.5); border-radius: 20px; background: linear-gradient(145deg, #3e0a2e, #561242); box-shadow: 0 0 24px rgba(183, 28, 143, 0.2); }
 .slot-preview-link { display: block; color: inherit; text-decoration: none; }
 .slot-top, .slot-footer { color: #f8eaa6; }
-.mini-slot { padding: 0.6rem; border-radius: 17px; background: #210516; }
-.reel { min-height: 56px; border-radius: 17px; background: radial-gradient(circle at 35% 12%, #fff7b0 0%, #ffc044 34%, #ff941f 72%, #f47714 100%); color: #080808; font-size: 1.6rem; box-shadow: inset 0 -5px 0 rgba(151, 55, 0, 0.16); }
-.launch-button { display: inline-block; margin-top: 0.45rem; padding: 0.65rem 1.35rem; border: 2px solid #ffc331; border-radius: 999px; color: #2a1000; background: linear-gradient(90deg, #ffda54, #ff8b13); box-shadow: 0 0 20px rgba(255, 128, 18, 0.45); font-size: 0.78rem; font-weight: 900; letter-spacing: 0.08em; }
-.home-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; width: min(100%, 900px); margin: 1.2rem auto 0; }
-.home-plan { display: grid; gap: 0.35rem; min-height: 104px; padding: 0.8rem 0.7rem; border: 1px solid rgba(255, 203, 92, 0.28); border-radius: 14px; color: #fff6d6; background: rgba(255, 255, 255, 0.05); cursor: pointer; text-decoration: none; transition: transform 0.2s ease, background 0.2s ease; }
+.mini-slot { padding: 0.7rem; border-radius: 17px; background: #210516; }
+.reel { min-height: 64px; border-radius: 17px; background: radial-gradient(circle at 35% 12%, #fff7b0 0%, #ffc044 34%, #ff941f 72%, #f47714 100%); color: #080808; font-size: 1.8rem; box-shadow: inset 0 -5px 0 rgba(151, 55, 0, 0.16); }
+.launch-button { display: inline-block; margin-top: 0.55rem; padding: 0.75rem 1.5rem; border: 2px solid #ffc331; border-radius: 999px; color: #2a1000; background: linear-gradient(90deg, #ffda54, #ff8b13); box-shadow: 0 0 20px rgba(255, 128, 18, 0.45); font-size: 0.9rem; font-weight: 900; letter-spacing: 0.08em; }
+.home-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; width: min(100%, 1200px); margin: 1.4rem auto 0; }
+.home-plan { display: grid; gap: 0.45rem; min-height: 116px; padding: 0.9rem 0.8rem; border: 1px solid rgba(255, 203, 92, 0.28); border-radius: 14px; color: #fff6d6; background: rgba(255, 255, 255, 0.05); cursor: pointer; text-decoration: none; transition: transform 0.2s ease, background 0.2s ease; }
 .home-plan-download { justify-items: center; }
 .home-download-icon-link { display: inline-block; margin-top: 0.35rem; cursor: pointer; line-height: 0; }
 .home-download-icon { width: 64px; height: 64px; object-fit: contain; transition: transform 0.2s ease, filter 0.2s ease; }
 .home-download-icon-link:hover .home-download-icon { transform: scale(1.08); filter: brightness(1.15); }
-.home-plan strong { color: #ffcf4d; font-size: 0.78rem; letter-spacing: 0.12em; }
-.home-plan span { color: #d6c4e4; font-size: 0.72rem; }
-.home-download-button { color: #ffcf4d; font-size: 0.78rem; font-weight: 900; letter-spacing: 0.12em; text-decoration: none; }
+.home-plan strong { color: #ffcf4d; font-size: 0.85rem; letter-spacing: 0.12em; }
+.home-plan span { color: #d6c4e4; font-size: 0.8rem; }
+.home-download-button { color: #ffcf4d; font-size: 0.85rem; font-weight: 900; letter-spacing: 0.12em; text-decoration: none; }
 .home-download-button:hover { color: #fff0b8; text-decoration: underline; }
 .home-plan-featured { border-color: rgba(255, 193, 49, 0.65); background: linear-gradient(145deg, rgba(71, 30, 38, 0.8), rgba(33, 15, 42, 0.85)); }
 .home-plan:hover { transform: translateY(-2px); background: rgba(255, 187, 33, 0.14); }
@@ -345,18 +344,63 @@ textarea {
 }
 
 @media (min-width: 601px) and (max-height: 800px) {
-  .app-shell { padding-top: 0.1rem; padding-bottom: 0.5rem; }
-  .hero-card { gap: 0.35rem; padding: 0.25rem 0.8rem 0; }
-  .home-brand { margin-bottom: 0.1rem; padding: 0.15rem 0.5rem; }
-  .home-brand img { height: 54px; }
-  .hero-copy h1 { margin: 0.1rem auto 0.2rem; font-size: clamp(1.7rem, 4.5vw, 2.8rem); }
+  .app-shell { padding-top: 0.5rem; padding-bottom: 1rem; }
+  .hero-card { gap: 0.65rem; padding: 0.65rem 1rem 0.9rem; }
+  .home-brand { margin-bottom: 0.2rem; padding: 0.3rem 0.65rem; }
   .hero-panel { margin-top: 0; }
-  .game-card { gap: 0.1rem; padding: 0.45rem 0.8rem 0.55rem; }
-  .card-preview { margin-top: 0.25rem; padding: 0.35rem; }
-  .mini-slot { gap: 0.3rem; padding: 0.35rem; }
-  .reel { min-height: 42px; border-radius: 12px; font-size: 1.25rem; }
-  .launch-button { margin-top: 0.2rem; padding-block: 0.45rem; }
-  .home-plans { margin-top: 0.45rem; }
-  .home-plan { min-height: 90px; padding-block: 0.45rem; }
-  .home-download-icon { width: 46px; height: 46px; }
+  .game-card { gap: 0.45rem; padding: 0.8rem 1rem 0.9rem; }
+  .card-preview { margin-top: 0.35rem; padding: 0.5rem; }
+  .home-plans { margin-top: 0.9rem; }
+  .home-plan { min-height: 104px; padding-block: 0.65rem; }
+}
+
+@media (min-width: 1101px) {
+  .hero-card { height: 32.375rem; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 0.5rem; padding: 0.8rem 1.25rem 0.9rem; }
+  .hero-copy h1 { margin: 0.1rem auto 0.2rem; font-size: clamp(1.85rem, 5vw, 3rem); }
+  .hero-panel { height: 100%; min-height: 0; margin-top: 0.1rem; }
+  .game-card { height: 100%; align-content: center; gap: 0.3rem; padding: 0.55rem 0.9rem; }
+  .game-card h2 { font-size: clamp(1.3rem, 2vw, 1.75rem); }
+  .card-preview { width: min(100%, 360px); margin-top: 0.35rem; padding: 0.45rem; }
+  .mini-slot { gap: 0.3rem; padding: 0.4rem; }
+  .reel { min-height: 48px; font-size: 1.6rem; }
+  .launch-button { margin-top: 0.2rem; padding: 0.65rem 1.2rem; font-size: 0.82rem; }
+  .home-plans { margin-top: 0; }
+  .home-plan { min-height: 92px; padding: 0.6rem 0.7rem; }
+  .home-download-icon { width: 52px; height: 52px; }
+}
+
+@media (min-width: 1101px) and (max-height: 800px) {
+  .hero-card { height: 31.375rem; }
+}
+
+@media (min-width: 360px) and (max-width: 600px) {
+  .hero-card { width: calc(100% + 0.7rem); height: 28.35rem; grid-template-columns: 72px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "brand copy" "panel panel" "plans plans"; gap: 0.45rem; margin-inline: -0.35rem; padding: 0.7rem; }
+  .home-brand { grid-area: brand; align-self: center; margin: 0; padding: 0; border: 0; background: transparent; }
+  .home-brand img { height: 52px; max-width: 72px; }
+  .hero-copy { grid-area: copy; align-self: center; }
+  .hero-copy h1 { margin: 0; font-size: 1.35rem; line-height: 1.05; }
+  .hero-panel { grid-area: panel; width: 100%; min-height: 0; margin: 0; }
+  .game-card { height: 100%; align-content: center; gap: 0.25rem; padding: 0.4rem 0.65rem; border-radius: 16px; }
+  .game-card h2 { font-size: 1.2rem; }
+  .card-preview { width: min(100%, 320px); margin-top: 0.15rem; padding: 0.35rem; border-radius: 14px; }
+  .mini-slot { gap: 0.25rem; padding: 0.3rem; border-radius: 12px; }
+  .reel { min-height: 42px; border-radius: 11px; font-size: 1.35rem; }
+  .launch-button { width: auto; margin-top: 0.15rem; padding: 0.55rem 0.85rem; font-size: 0.72rem; }
+  .home-plans { grid-area: plans; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; width: 100%; margin: 0; }
+  .home-plan { min-width: 0; min-height: 82px; gap: 0.2rem; padding: 0.4rem 0.2rem; border-radius: 10px; }
+  .home-plan strong { font-size: 0.68rem; letter-spacing: 0.04em; }
+  .home-plan span, .home-download-button { font-size: 0.68rem; letter-spacing: 0; }
+  .home-download-icon { width: 42px; height: 42px; }
+}
+
+.home-plans { width: min(100%, 900px); margin-top: 0.25rem; }
+.home-plan { height: 84px; min-height: 0; align-content: center; gap: 0.25rem; padding: 0.45rem 0.7rem; }
+.home-download-icon-link { margin-top: 0.1rem; }
+.home-download-icon { width: 40px; height: 40px; }
+.hero-card { border-radius: 16px; }
+
+@media (max-width: 600px) {
+  .home-plans { width: 100%; margin-top: 0; }
+  .home-plan { height: 74px; padding: 0.3rem 0.2rem; }
+  .home-download-icon { width: 36px; height: 36px; }
 }

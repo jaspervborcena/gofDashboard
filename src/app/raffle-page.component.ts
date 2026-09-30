@@ -6,7 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { gsap } from 'gsap';
 import { BehaviorSubject } from 'rxjs';
 import { DrawItem, NumberMode, Player, Raffle, RaffleService, SpinMode } from './raffle.service';
-import { FREE_MAX_PLAYERS } from './plan-schema';
+import { FREE_MAX_PLAYERS, planCatalog } from './plan-schema';
 
 @Component({
   selector: 'app-raffle-page',
@@ -42,12 +42,12 @@ export class RafflePageComponent implements OnDestroy, OnInit {
   duplicateNames: string[] = [];
   participantLimitMessage = '';
   spinLimitMessage = '';
-  readonly freePlayerLimit = FREE_MAX_PLAYERS;
+  playerLimit = FREE_MAX_PLAYERS;
   exclusionMessage = '';
   private exclusionMessageTimeout?: number;
   playerNumberMode: NumberMode = 'random';
   reels = ['🎰', '🎰', '🎰'];
-  reelStrip = Array.from({ length: 100 }, (_, index) => index % 10);
+  reelStrip = Array.from({ length: 100 }, (_, index) => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[index % 36]);
   reelPositions = [0, 0, 0];
   lastWinner: { name: string; number: string } | null = null;
   isSpinning = false;
@@ -278,6 +278,9 @@ export class RafflePageComponent implements OnDestroy, OnInit {
       this.raffle = raffles.find((item) => item.id === id || item.gameId === id) ?? null;
       if (this.raffle) {
         this.isPreviewRaffle = false;
+        const ownerPlan = await this.raffleService.getCurrentUserPlan(this.raffle.creatorId);
+        const catalogPlan = planCatalog.find((item) => item.id === (ownerPlan === 'free' ? 'freemium' : ownerPlan));
+        this.playerLimit = catalogPlan?.maxPlayers ?? FREE_MAX_PLAYERS;
         const participantRecords = await this.raffleService.listParticipants(this.raffle.gameUid);
         if (participantRecords.length) {
           this.raffle.players = participantRecords.map((participant) => ({
@@ -285,6 +288,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
             userId: participant.userId,
             name: participant.name,
             assignedNumber: participant.assignedNumber,
+            ...(participant.ticketCode ? { ticketCode: participant.ticketCode } : {}),
             drawn: participant.status === 'winner',
             status: participant.status,
             ...(participant.mobileNumber ? { mobileNumber: participant.mobileNumber } : {}),
@@ -325,11 +329,16 @@ export class RafflePageComponent implements OnDestroy, OnInit {
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line, index) => {
-        const parts = line.split('•').map((part) => part.trim());
-        const explicitNumber = parts.length > 1 && /^\d+$/.test(parts[0]) ? Number(parts[0]) : null;
+        const { ticketNumber, name } = this.parsePlayerEntry(line);
+        const existingPlayer = this.raffle!.players.find((player) =>
+          player.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase());
+        const isAlphanumericTicket = ticketNumber !== null && !/^\d+$/.test(ticketNumber);
         return {
-          name: explicitNumber === null ? parts[0] : parts.slice(1).join(' • '),
-          assignedNumber: explicitNumber ?? (this.playerNumberMode === 'ordered' ? index + 1 : this.createRandomNumber())
+          name,
+          assignedNumber: ticketNumber !== null && !isAlphanumericTicket
+            ? Number(ticketNumber)
+            : existingPlayer?.assignedNumber ?? (this.playerNumberMode === 'ordered' ? index + 1 : this.createRandomNumber()),
+          ...(isAlphanumericTicket ? { ticketCode: ticketNumber } : {})
         };
       });
 
@@ -351,6 +360,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
           userId: existingPlayer?.userId,
           name: entry.name,
           assignedNumber: entry.assignedNumber,
+          ...(entry.ticketCode ? { ticketCode: entry.ticketCode } : {}),
           drawn: existingPlayer?.drawn ?? false,
           status: existingPlayer?.status,
           mobileNumber: existingPlayer?.mobileNumber,
@@ -366,6 +376,17 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     this.participantSaveMessage = 'Participants saved';
   }
 
+  private parsePlayerEntry(line: string): { ticketNumber: string | null; name: string } {
+    const parts = line.split('•').map((part) => part.trim());
+    const ticketNumber = parts.length > 1 && /^[a-z\d]+$/i.test(parts[0])
+      ? parts[0].toUpperCase()
+      : null;
+    return {
+      ticketNumber,
+      name: ticketNumber === null ? parts[0] : parts.slice(1).join(' • ')
+    };
+  }
+
   assignMissingNumbers(): void {
     if (!this.raffle || !this.editorText.trim()) {
       return;
@@ -378,22 +399,31 @@ export class RafflePageComponent implements OnDestroy, OnInit {
       .map((line) => line.trim())
       .filter(Boolean);
 
-    if (lines.length > this.freePlayerLimit) {
-      lines = lines.slice(0, this.freePlayerLimit);
-      this.participantLimitMessage = `Player limit reached: only ${this.freePlayerLimit} players can be added.`;
+    if (lines.length > this.playerLimit) {
+      lines = lines.slice(0, this.playerLimit);
+      this.participantLimitMessage = `Player limit reached: only ${this.playerLimit} players can be added.`;
     }
 
     this.editorText = lines.map((line, index) => {
-      const parts = line.split('•').map((part) => part.trim());
-      const explicitNumber = parts.length > 1 && /^\d+$/.test(parts[0]) ? Number(parts[0]) : null;
-      const name = explicitNumber === null ? parts[0] : parts.slice(1).join(' • ');
-      if (explicitNumber !== null) {
+      const { ticketNumber, name } = this.parsePlayerEntry(line);
+      const existingPlayer = this.raffle!.players.find((player) =>
+        player.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase());
+      const numericTicket = ticketNumber !== null && /^\d+$/.test(ticketNumber);
+      const ticketCode = ticketNumber !== null && !numericTicket ? ticketNumber : undefined;
+      if (numericTicket) {
+        const explicitNumber = Number(ticketNumber);
         usedNumbers.add(explicitNumber);
         nextOrderedNumber = Math.max(nextOrderedNumber, explicitNumber + 1);
       }
-      let assignedNumber = explicitNumber;
+      let assignedNumber = numericTicket
+        ? Number(ticketNumber)
+        : ticketCode
+        ? existingPlayer?.assignedNumber ?? null
+        : null;
       if (assignedNumber === null) {
-        if (this.playerNumberMode === 'ordered') {
+        if (ticketCode) {
+          assignedNumber = this.createRandomNumber(usedNumbers);
+        } else if (this.playerNumberMode === 'ordered') {
           while (usedNumbers.has(nextOrderedNumber)) {
             nextOrderedNumber += 1;
           }
@@ -404,7 +434,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
         }
       }
       usedNumbers.add(assignedNumber);
-      return `${this.formatNumber(assignedNumber)} • ${name}`;
+      return `${ticketCode ?? this.formatNumber(assignedNumber)} • ${name}`;
     }).join('\n');
   }
 
@@ -414,22 +444,31 @@ export class RafflePageComponent implements OnDestroy, OnInit {
       return;
     }
 
-    if (this.raffle.players.length >= this.freePlayerLimit) {
-      this.participantLimitMessage = `Player limit reached: only ${this.freePlayerLimit} players can be added.`;
+    if (this.raffle.players.length >= this.playerLimit) {
+      this.participantLimitMessage = `Player limit reached: only ${this.playerLimit} players can be added.`;
       return;
     }
 
     const digitCount = this.raffle.digitCount ?? 3;
     const usedNumbers = new Set(this.raffle.players.map((player) => player.assignedNumber));
-    const assignedNumber = this.useJoinedNumber
+    const requestedTicketNumber = this.useJoinedNumber
       ? this.parseJoinedNumber(this.joinedNumber, digitCount)
-      : this.playerNumberMode === 'ordered'
-      ? this.raffle.players.length + 1
-      : this.createRandomNumber(usedNumbers);
-    if (assignedNumber === null) {
-      this.showParticipantMessage(`Enter a number from 1 to ${10 ** digitCount - 1}.`);
+      : null;
+    if (this.useJoinedNumber && requestedTicketNumber === null) {
+      this.showParticipantMessage(`Enter up to ${digitCount} letters or numbers.`);
       return;
     }
+
+    const hasLetters = !!requestedTicketNumber && /[A-Z]/.test(requestedTicketNumber);
+    const ticketCode = hasLetters ? requestedTicketNumber : undefined;
+    const assignedNumber = requestedTicketNumber === null
+      ? this.playerNumberMode === 'ordered'
+        ? this.raffle.players.length + 1
+        : this.createRandomNumber(usedNumbers)
+      : hasLetters
+      ? this.createRandomNumber(usedNumbers)
+      : Number(requestedTicketNumber);
+    const displayTicketNumber = ticketCode ?? this.formatNumber(assignedNumber);
 
     const duplicate = this.raffle.players.find((player) => player.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase());
     if (duplicate) {
@@ -437,15 +476,17 @@ export class RafflePageComponent implements OnDestroy, OnInit {
       return;
     }
 
-    const duplicateNumber = this.raffle.players.find((player) => player.assignedNumber === assignedNumber);
+    const duplicateNumber = this.raffle.players.find((player) =>
+      this.formatPlayerNumber(player).toLocaleUpperCase() === displayTicketNumber.toLocaleUpperCase());
     if (duplicateNumber) {
-      this.showParticipantMessage(`The number ${this.formatNumber(assignedNumber)} is already in use.`);
+      this.showParticipantMessage(`The ticket number ${displayTicketNumber} is already in use.`);
       return;
     }
     const player: Player = {
       id: `${this.raffle.id}-${Date.now()}`,
       name,
       assignedNumber,
+      ...(ticketCode ? { ticketCode } : {}),
       drawn: false
     };
 
@@ -471,13 +512,20 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     this.participantLimitMessage = '';
   }
 
-  private parseJoinedNumber(value: string, digitCount: number): number | null {
-    if (!/^\d+$/.test(value.trim()) || value.trim().length > digitCount) {
+  private parseJoinedNumber(value: string, digitCount: number): string | null {
+    const ticketNumber = value.trim().toUpperCase();
+    if (!/^[A-Z0-9]+$/.test(ticketNumber) || ticketNumber.length > digitCount) {
       return null;
     }
 
-    const number = Number(value.trim());
-    return number >= 1 && number <= 10 ** digitCount - 1 ? number : null;
+    if (/^\d+$/.test(ticketNumber)) {
+      const number = Number(ticketNumber);
+      if (number < 1 || number > 10 ** digitCount - 1) {
+        return null;
+      }
+      return this.formatNumber(number);
+    }
+    return ticketNumber;
   }
 
   private findDuplicateNames(names: string[]): string[] {
@@ -540,22 +588,24 @@ export class RafflePageComponent implements OnDestroy, OnInit {
       : item);
     const existingPlayer = this.raffle.players.find((player) =>
       player.id === historyItem.participantId
-      || (player.name === historyItem.winnerName && this.formatNumber(player.assignedNumber) === historyItem.drawnNumber));
+      || (player.name === historyItem.winnerName && this.formatPlayerNumber(player) === historyItem.drawnNumber));
     if (existingPlayer) {
       this.raffle.players = this.raffle.players.map((player) => player.id === existingPlayer.id
         ? { ...player, drawn: false, status: 'active' }
         : player);
     } else {
+      const ticketCode = /^\d+$/.test(historyItem.drawnNumber) ? undefined : historyItem.drawnNumber.toUpperCase();
       this.raffle.players = [...this.raffle.players, {
         id: historyItem.participantId ?? `${this.raffle.id}-${Date.now()}`,
         name: historyItem.winnerName,
-        assignedNumber: Number(historyItem.drawnNumber),
+        assignedNumber: ticketCode ? this.createRandomNumber() : Number(historyItem.drawnNumber),
+        ...(ticketCode ? { ticketCode } : {}),
         drawn: false,
         status: 'active'
       }];
     }
     this.editorText = this.formatEditorText();
-      this.showExclusionMessage(`Restored ${historyItem.drawnNumber} • ${historyItem.winnerName} to the participant list.`);
+    this.showExclusionMessage(`Restored ${historyItem.drawnNumber} • ${historyItem.winnerName} to the participant list.`);
     await this.saveRaffleIfPersisted();
   }
 
@@ -575,7 +625,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     const item = this.raffle.history[historyIndex];
     const winnerPlayer = this.raffle.players.find((player) =>
       player.id === item.participantId
-      || (player.name === item.winnerName && this.formatNumber(player.assignedNumber) === item.drawnNumber));
+      || (player.name === item.winnerName && this.formatPlayerNumber(player) === item.drawnNumber));
     this.raffle.history[historyIndex] = {
       ...item,
       excludedFromList: true,
@@ -585,6 +635,10 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     this.editorText = this.formatEditorText();
     this.showExclusionMessage(`Excluded ${item.drawnNumber} • ${item.winnerName} from the participant list.`);
     await this.saveRaffleIfPersisted();
+  }
+
+  dismissWinnerDialog(): void {
+    this.lastWinner = null;
   }
 
   private showExclusionMessage(message: string): void {
@@ -638,7 +692,8 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     this.lastWinner = null;
     this.clearSpinTickTimers();
     const winner = players[Math.floor(Math.random() * players.length)];
-    const targetReels = this.formatNumber(winner.assignedNumber).split('').map((digit) => Number(digit));
+    const ticketNumber = this.formatPlayerNumber(winner);
+    const targetReels = ticketNumber.split('').map((character) => this.reelStrip.indexOf(character));
 
     const digitStates = targetReels.map(() => ({ spinPos: 0 }));
     const maxSpinPos = 80; // rows, kept within the repeated reel strip
@@ -658,8 +713,8 @@ export class RafflePageComponent implements OnDestroy, OnInit {
         this.stopSound.currentTime = 0;
         void this.stopSound.play().catch(() => undefined);
         this.reelPositions = targetReels.map((val) => val);
-        this.reels = targetReels.map((num) => num.toString());
-        this.lastWinner = { name: winner.name, number: this.formatNumber(winner.assignedNumber) };
+        this.reels = ticketNumber.split('');
+        this.lastWinner = { name: winner.name, number: ticketNumber };
         this.isSpinning = false;
         this.spinProgress = 100;
         this.winSound.currentTime = 0;
@@ -672,7 +727,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
             id: `${this.raffle!.id}-${Date.now()}`,
             roundNumber: this.nextRoundNumber(),
             winnerName: winner.name,
-            drawnNumber: this.formatNumber(winner.assignedNumber),
+            drawnNumber: ticketNumber,
             timestamp: new Date().toISOString(),
             participantId: winner.id,
             participantName: winner.name,
@@ -681,7 +736,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
         ];
         this.raffle!.remainingDraws = Math.max(0, this.raffle!.remainingDraws - 1);
         this.raffle!.lastWinner = winner.name;
-        this.raffle!.lastNumber = this.formatNumber(winner.assignedNumber);
+        this.raffle!.lastNumber = ticketNumber;
         await this.saveRaffleIfPersisted();
       }
     });
@@ -748,9 +803,13 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     return String(number).padStart(this.raffle?.digitCount ?? 3, '0');
   }
 
+  formatPlayerNumber(player: Player): string {
+    return player.ticketCode ?? this.formatNumber(player.assignedNumber);
+  }
+
   private formatEditorText(): string {
     return (this.raffle?.players ?? [])
-      .map((player) => `${this.formatNumber(player.assignedNumber)} • ${player.name}`)
+      .map((player) => `${this.formatPlayerNumber(player)} • ${player.name}`)
       .join('\n');
   }
 
