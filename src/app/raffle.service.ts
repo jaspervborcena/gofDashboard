@@ -263,7 +263,11 @@ export class RaffleService {
     }
 
     const credential = await signInWithEmailAndPassword(this.auth, email, password);
-    await this.ensureUserSpinFields(credential.user.uid);
+    try {
+      await this.ensureUserSpinFields(credential.user.uid);
+    } catch (error) {
+      console.warn('Email sign-in succeeded, but user spin fields could not be updated.', error);
+    }
   }
 
   async signUpWithEmail(email: string, password: string): Promise<UserCredential> {

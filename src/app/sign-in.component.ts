@@ -36,19 +36,7 @@ export class SignInComponent {
       return;
     }
 
-    this.loading = true;
-    try {
-      const methods = await this.raffleService.fetchSignInMethodsForEmail(this.email.trim());
-      if (methods.includes('password')) {
-        this.step = 'signin';
-      } else {
-        this.step = 'signup';
-      }
-    } catch (err) {
-      this.error = this.raffleService.getAuthErrorMessage(err, 'Unable to check email.');
-    } finally {
-      this.loading = false;
-    }
+    this.step = 'signup';
   }
 
   async signInWithGoogle(): Promise<void> {
