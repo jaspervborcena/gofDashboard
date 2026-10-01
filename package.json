@@ -6,6 +6,7 @@
     "start": "npm run build && node server.js",
     "start:dev": "ng serve",
     "build": "ng build",
+    "assets:android": "capacitor-assets generate --android --assetPath assets --iconBackgroundColor=#090612 --iconBackgroundColorDark=#090612 --splashBackgroundColor=#090612 --splashBackgroundColorDark=#090612",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -23,6 +24,7 @@
     "@capacitor/android": "^8.5.2",
     "@capacitor/cli": "^8.5.2",
     "@capacitor/core": "^8.5.2",
+    "@capgo/capacitor-social-login": "^8.5.12",
     "@paypal/paypal-js": "^11.1.1",
     "@types/qrcode": "^1.5.6",
     "firebase": "^10.14.1",
@@ -37,6 +39,7 @@
     "@angular-devkit/build-angular": "^19.1.4",
     "@angular/cli": "^19.1.4",
     "@angular/compiler-cli": "^19.1.0",
+    "@capacitor/assets": "^3.0.5",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.5.0",
     "karma": "~6.4.0",

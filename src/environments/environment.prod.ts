@@ -2,6 +2,7 @@ export const environment = {
   production: true,
   appBaseUrl: 'https://www.gameoffortunes.com',
   paymentApiUrl: 'https://game-of-fortunes-payment-api-jozxtuutyq-de.a.run.app',
+  googleWebClientId: '12420305994-dho63lid788c2rti73rabmr3spccngj9.apps.googleusercontent.com',
   firebaseConfig: {
     apiKey: 'AIzaSyBDzrpzYiaNc2TiCaNWI7cOvIgEVKCFpVs',
     authDomain: 'gameoffortunes-32578.firebaseapp.com',

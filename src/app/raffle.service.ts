@@ -1,7 +1,10 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
+import { SocialLogin } from '@capgo/capacitor-social-login';
 import {
   Auth,
   GoogleAuthProvider,
+  signInWithCredential,
   signInWithPopup,
   signOut as firebaseSignOut,
   user,
@@ -159,12 +162,20 @@ export interface Raffle {
 
 @Injectable({ providedIn: 'root' })
 export class RaffleService {
+  private readonly raffleSpinningState = signal(false);
+  readonly raffleSpinning = this.raffleSpinningState.asReadonly();
+
   private readonly auth = inject(Auth);
   private readonly firestore = inject(Firestore);
   readonly user$ = user(this.auth);
 
   private readonly storageKey = 'gofv2-raffles';
   private readonly firestoreEnabled = !environment.firebaseConfig.apiKey.includes('YOUR_') && !!environment.firebaseConfig.projectId;
+
+  setRaffleSpinning(isSpinning: boolean): void {
+    this.raffleSpinningState.set(isSpinning);
+  }
+  private nativeGoogleLoginInitialization?: Promise<void>;
 
   get currentUserId(): string | null {
     return this.auth.currentUser?.uid ?? null;
@@ -217,7 +228,9 @@ export class RaffleService {
       throw new Error('Firebase auth is not configured for this app.');
     }
 
-    const credential = await signInWithPopup(this.auth, new GoogleAuthProvider());
+    const credential = Capacitor.getPlatform() === 'android'
+      ? await this.signInWithNativeGoogle()
+      : await signInWithPopup(this.auth, new GoogleAuthProvider());
     const signedInUser = credential.user;
     await this.ensureUserSpinFields(signedInUser.uid);
     const plan = await this.getCurrentUserPlan(signedInUser.uid);
@@ -241,12 +254,46 @@ export class RaffleService {
     }
   }
 
+  private async signInWithNativeGoogle(): Promise<UserCredential> {
+    this.nativeGoogleLoginInitialization ??= SocialLogin.initialize({
+      google: { webClientId: environment.googleWebClientId }
+    });
+
+    try {
+      await this.nativeGoogleLoginInitialization;
+    } catch (error) {
+      this.nativeGoogleLoginInitialization = undefined;
+      throw error;
+    }
+
+    const { result } = await SocialLogin.login({
+      provider: 'google',
+      options: { scopes: ['email', 'profile'] }
+    });
+
+    if (result.responseType !== 'online' || !result.idToken) {
+      throw new Error('Google sign-in did not return an ID token.');
+    }
+
+    return await signInWithCredential(
+      this.auth,
+      GoogleAuthProvider.credential(result.idToken)
+    );
+  }
+
   async signOut(): Promise<void> {
     if (!this.firestoreEnabled) {
       return;
     }
 
     await firebaseSignOut(this.auth);
+    if (Capacitor.getPlatform() === 'android' && this.nativeGoogleLoginInitialization) {
+      try {
+        await SocialLogin.logout({ provider: 'google' });
+      } catch (error) {
+        console.warn('Firebase sign-out succeeded, but native Google sign-out failed.', error);
+      }
+    }
   }
 
   async fetchSignInMethodsForEmail(email: string): Promise<string[]> {

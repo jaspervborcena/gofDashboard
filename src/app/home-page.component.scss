@@ -376,23 +376,26 @@ textarea {
 }
 
 @media (min-width: 360px) and (max-width: 600px) {
-  .hero-card { width: calc(100% + 0.7rem); height: 28.35rem; grid-template-columns: 72px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "brand copy" "panel panel" "plans plans"; gap: 0.45rem; margin-inline: -0.35rem; padding: 0.7rem; }
-  .home-brand { grid-area: brand; align-self: center; margin: 0; padding: 0; border: 0; background: transparent; }
+  .hero-card { width: calc(100% + 0.7rem); height: auto; grid-template-columns: 72px minmax(0, 1fr); grid-template-rows: auto auto auto auto; grid-template-areas: "title title" "brand description" "panel panel" "plans plans"; gap: 0.45rem; margin-inline: -0.35rem; padding: 0.7rem; }
+  .hero-copy { display: contents; }
+  .hero-copy h1 { grid-area: title; width: 100%; margin: 0.15rem 0 0.25rem; font-size: 1.2rem; line-height: 1.1; }
+  .home-description { grid-area: description; width: 100%; margin: 0; text-align: left; }
+  .home-brand { grid-area: brand; align-self: start; margin: 0.35rem 0 0; padding: 0; border: 0; background: transparent; }
   .home-brand img { height: 52px; max-width: 72px; }
-  .hero-copy { grid-area: copy; align-self: center; }
-  .hero-copy h1 { margin: 0; font-size: 1.05rem; line-height: 1.05; }
-  .home-description { margin-top: 0.2rem; font-size: 0.86rem; line-height: 1.12; }
-  .hero-panel { grid-area: panel; width: 100%; min-height: 0; margin: 0; }
-  .game-card { height: 100%; align-content: center; gap: 0.25rem; padding: 0.4rem 0.65rem; border-radius: 16px; }
+  .home-description { max-height: 3.36em; overflow-y: auto; padding-right: 0.25rem; font-size: 0.86rem; line-height: 1.12; scrollbar-color: rgba(255, 203, 92, 0.75) transparent; scrollbar-width: thin; overscroll-behavior: contain; }
+  .home-description::-webkit-scrollbar { width: 4px; }
+  .home-description::-webkit-scrollbar-thumb { border-radius: 4px; background: rgba(255, 203, 92, 0.75); }
+  .hero-panel { grid-area: panel; width: 100%; height: auto; min-height: 0; margin: 0; }
+  .game-card { height: auto; align-content: center; gap: 0.25rem; padding: 0.4rem 0.65rem; border-radius: 16px; }
   .game-card h2 { font-size: 1rem; line-height: 1.15; }
   .card-preview { width: min(100%, 320px); margin-top: 0.1rem; padding: 0.25rem; border-radius: 14px; }
   .mini-slot { gap: 0.2rem; padding: 0.2rem; border-radius: 12px; }
   .reel { min-height: 36px; border-radius: 11px; font-size: 1.25rem; }
   .launch-button { width: auto; margin-top: 0.2rem; padding: 0.55rem 0.85rem; font-size: 0.72rem; }
   .home-plans { grid-area: plans; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; width: 100%; margin: 0; }
-  .home-plan { min-width: 0; min-height: 82px; gap: 0.2rem; padding: 0.4rem 0.2rem; border-radius: 10px; }
-  .home-plan strong { font-size: 0.68rem; letter-spacing: 0.04em; }
-  .home-plan span, .home-download-button { font-size: 0.68rem; letter-spacing: 0; }
+  .home-plan { height: auto; min-width: 0; min-height: 74px; gap: 0.2rem; padding: 0.3rem 0.12rem; border-radius: 10px; overflow-wrap: anywhere; }
+  .home-plan strong, .home-download-button { font-size: clamp(0.56rem, 2.7vw, 0.68rem); line-height: 1.1; letter-spacing: 0.01em; }
+  .home-plan span { font-size: clamp(0.54rem, 2.55vw, 0.66rem); line-height: 1.1; overflow-wrap: anywhere; }
   .home-download-icon { width: 42px; height: 42px; }
 }
 
@@ -404,6 +407,6 @@ textarea {
 
 @media (max-width: 600px) {
   .home-plans { width: 100%; margin-top: 0; }
-  .home-plan { height: 74px; padding: 0.3rem 0.2rem; }
+  .home-plan { height: auto; min-height: 74px; padding: 0.3rem 0.12rem; }
   .home-download-icon { width: 36px; height: 36px; }
 }

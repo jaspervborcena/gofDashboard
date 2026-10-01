@@ -23,6 +23,9 @@ export class RafflePageComponent implements OnDestroy, OnInit {
   private readonly winSound = new Audio('/assets/slot-win.mp3');
   private readonly raffleState$ = new BehaviorSubject<Raffle | null>(null);
   private spinTickTimers: number[] = [];
+  private spinTimeline?: gsap.core.Timeline;
+  private spinFastDuration = 0;
+  private spinSlowdownDuration = 0;
 
   raffle: Raffle | null = null;
   isPreviewRaffle = false;
@@ -51,6 +54,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
   reelPositions = [0, 0, 0];
   lastWinner: { name: string; number: string } | null = null;
   isSpinning = false;
+  spinExitDialogOpen = false;
   spinProgress = 0;
   leftPanelOpen = false;
   rightPanelOpen = false;
@@ -58,7 +62,12 @@ export class RafflePageComponent implements OnDestroy, OnInit {
   participantPageSize = 20;
 
   ngOnDestroy(): void {
+    this.raffleService.setRaffleSpinning(false);
     this.clearSpinTickTimers();
+    this.spinTimeline?.kill();
+    this.spinTimeline = undefined;
+    this.stopSound.pause();
+    this.winSound.pause();
     if (this.editorSaveTimeout) {
       window.clearTimeout(this.editorSaveTimeout);
     }
@@ -67,6 +76,9 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     }
     if (this.participantMessageTimeout) {
       window.clearTimeout(this.participantMessageTimeout);
+    }
+    if (this.exclusionMessageTimeout) {
+      window.clearTimeout(this.exclusionMessageTimeout);
     }
   }
 
@@ -176,7 +188,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     this.duplicateMessageTimeout = window.setTimeout(() => {
       this.participantSaveMessage = '';
       this.duplicateMessageTimeout = undefined;
-    }, 900);
+    }, 2000);
   }
 
   scheduleEditorSave(): void {
@@ -634,11 +646,58 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     this.raffle.players = this.raffle.players.filter((player) => player.id !== winnerPlayer?.id);
     this.editorText = this.formatEditorText();
     this.showExclusionMessage(`Excluded ${item.drawnNumber} • ${item.winnerName} from the participant list.`);
+    this.dismissWinnerDialog();
     await this.saveRaffleIfPersisted();
   }
 
   dismissWinnerDialog(): void {
     this.lastWinner = null;
+  }
+
+  handleBrandClick(event: MouseEvent): void {
+    if (!this.isSpinning) {
+      return;
+    }
+
+    event.preventDefault();
+    this.spinTimeline?.pause();
+    this.clearSpinTickTimers();
+    this.stopSound.pause();
+    this.winSound.pause();
+    this.spinExitDialogOpen = true;
+  }
+
+  cancelSpinExitDialog(): void {
+    this.spinExitDialogOpen = false;
+    if (this.isSpinning && this.spinTimeline) {
+      this.spinTimeline.resume();
+      this.scheduleSpinTicks();
+    }
+  }
+
+  leaveRaffleWhileSpinning(): void {
+    this.spinExitDialogOpen = false;
+    this.clearSpinTickTimers();
+    this.spinTimeline?.kill();
+    this.spinTimeline = undefined;
+    this.stopSound.pause();
+    this.stopSound.currentTime = 0;
+    this.winSound.pause();
+    this.winSound.currentTime = 0;
+    this.isSpinning = false;
+    this.raffleService.setRaffleSpinning(false);
+    this.lastWinner = null;
+    this.spinProgress = 0;
+    this.reelPositions = this.reelPositions.map(() => 0);
+    this.reels = this.reelPositions.map(() => '🎰');
+    void this.router.navigateByUrl('/');
+  }
+
+  @HostListener('document:keydown.escape')
+  handleSpinExitEscape(): void {
+    if (this.spinExitDialogOpen) {
+      this.cancelSpinExitDialog();
+    }
   }
 
   private showExclusionMessage(message: string): void {
@@ -649,7 +708,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     this.exclusionMessageTimeout = window.setTimeout(() => {
       this.exclusionMessage = '';
       this.exclusionMessageTimeout = undefined;
-    }, 2000);
+    }, 900);
   }
 
   async updateMode(mode: SpinMode): Promise<void> {
@@ -689,6 +748,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     this.spinLimitMessage = '';
 
     this.isSpinning = true;
+    this.raffleService.setRaffleSpinning(true);
     this.lastWinner = null;
     this.clearSpinTickTimers();
     const winner = players[Math.floor(Math.random() * players.length)];
@@ -700,9 +760,11 @@ export class RafflePageComponent implements OnDestroy, OnInit {
     const digitCount = this.raffle.digitCount ?? targetReels.length;
     const fastDuration = 5 + Math.max(0, Math.min(3, digitCount - 3)) * 2;
     const slowdownDuration = 3;
+    this.spinFastDuration = fastDuration;
+    this.spinSlowdownDuration = slowdownDuration;
 
     // Create GSAP timeline
-    const tl = gsap.timeline({
+    const tl = this.spinTimeline = gsap.timeline({
       onUpdate: () => {
         this.reelPositions = digitStates.map((state) => state.spinPos);
         this.spinProgress = tl.progress() * 100;
@@ -716,6 +778,8 @@ export class RafflePageComponent implements OnDestroy, OnInit {
         this.reels = ticketNumber.split('');
         this.lastWinner = { name: winner.name, number: ticketNumber };
         this.isSpinning = false;
+        this.raffleService.setRaffleSpinning(false);
+        this.spinTimeline = undefined;
         this.spinProgress = 100;
         this.winSound.currentTime = 0;
         void this.winSound.play().catch(() => undefined);
@@ -755,17 +819,32 @@ export class RafflePageComponent implements OnDestroy, OnInit {
         ease: 'power3.out'
       }, fastDuration + delay);
     });
-    this.scheduleSpinTicks(fastDuration, slowdownDuration);
+    this.scheduleSpinTicks();
   }
 
-  private scheduleSpinTicks(fastDuration: number, slowdownDuration: number): void {
-    const totalDuration = (fastDuration + slowdownDuration) * 1000;
-    const slowdownStart = fastDuration * 1000;
-    const startedAt = performance.now();
+  handleSlotMachineKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      void this.spin();
+    }
+  }
+
+  private scheduleSpinTicks(): void {
+    const timeline = this.spinTimeline;
+    if (!timeline || timeline.paused()) {
+      return;
+    }
+
+    const totalDuration = timeline.duration() * 1000;
+    const slowdownStart = this.spinFastDuration * 1000;
 
     const playTick = (): void => {
-      const elapsed = performance.now() - startedAt;
-      if (elapsed >= totalDuration || !this.isSpinning) {
+      if (timeline.paused() || !this.isSpinning || this.spinTimeline !== timeline) {
+        return;
+      }
+
+      const elapsed = timeline.time() * 1000;
+      if (elapsed >= totalDuration) {
         return;
       }
 
@@ -773,7 +852,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
       this.stopSound.currentTime = 0;
       void this.stopSound.play().catch(() => undefined);
 
-      const slowdownProgress = Math.max(0, Math.min(1, (elapsed - slowdownStart) / (slowdownDuration * 1000)));
+      const slowdownProgress = Math.max(0, Math.min(1, (elapsed - slowdownStart) / (this.spinSlowdownDuration * 1000)));
       const delay = elapsed < slowdownStart
         ? 140
         : 500 + Math.pow(slowdownProgress, 1.8) * 3000;

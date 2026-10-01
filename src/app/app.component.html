@@ -1,4 +1,4 @@
-<header class="top-bar">
+<header class="top-bar" [attr.inert]="raffleService.raffleSpinning() ? '' : null">
   <div class="app-shell">
     <div class="top-right">
       <span *ngIf="user" class="welcome">Welcome {{ userDisplayName }}!</span>
@@ -76,6 +76,6 @@
 
 <main class="app-shell">
   <router-outlet></router-outlet>
-  <app-features-footer></app-features-footer>
-  <app-ad-banner *ngIf="!adFree"></app-ad-banner>
+  <app-features-footer [attr.inert]="raffleService.raffleSpinning() ? '' : null"></app-features-footer>
+  <app-ad-banner *ngIf="!adFree" [attr.inert]="raffleService.raffleSpinning() ? '' : null"></app-ad-banner>
 </main>

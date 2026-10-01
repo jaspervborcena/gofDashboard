@@ -100,3 +100,11 @@ Payment order and status routes require a Firebase ID token. The backend calcula
 ## Android App
 
 The Capacitor app ID is `com.gameoffortunes.app`, with web output in `dist/gofv2/browser`. The Download page links to the published APK when available.
+
+The Android launcher icon source is `assets/icon.png`, copied from `src/assets/gofv2logo.png`. After adding or regenerating the Android platform, generate its icon and splash resources with:
+
+```bash
+npm run assets:android
+```
+
+Then rebuild the debug APK from the `android` directory with `gradlew assembleDebug` (Windows: `gradlew.bat assembleDebug`).
