@@ -64,7 +64,10 @@ function sendFile(res, filePath) {
 
     const ext = path.extname(filePath).toLowerCase();
     const contentType = mimeTypes[ext] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': contentType });
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
+    });
     res.end(content);
   });
 }
@@ -85,7 +88,10 @@ const server = http.createServer((req, res) => {
       : path.join(staticRoot, 'index.html');
 
     if (req.method === 'HEAD') {
-      res.writeHead(200, { 'Content-Type': mimeTypes[path.extname(filePath).toLowerCase()] || 'text/html; charset=utf-8' });
+      res.writeHead(200, {
+        'Content-Type': mimeTypes[path.extname(filePath).toLowerCase()] || 'text/html; charset=utf-8',
+        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
+      });
       res.end();
       return;
     }

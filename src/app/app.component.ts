@@ -20,6 +20,7 @@ export class AppComponent {
   user: { uid: string; displayName?: string | null; email?: string | null; photoURL?: string | null; phoneNumber?: string | null } | null = null;
   adFree = false;
   profileOpen = false;
+  activeProfileTab: 'profile' | 'history' = 'profile';
   profileLoading = false;
   profileError = '';
   profileSummary: UserProfileSummary | null = null;
@@ -87,6 +88,7 @@ export class AppComponent {
       return;
     }
 
+    this.activeProfileTab = 'profile';
     this.profileSummary = null;
     this.profileLoading = true;
     this.profileError = '';

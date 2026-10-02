@@ -23,7 +23,12 @@
           </header>
           <p *ngIf="profileLoading" class="profile-message" role="status">Loading profile…</p>
           <p *ngIf="profileError" class="profile-message profile-error" role="alert">{{ profileError }}</p>
+          <nav class="profile-tabs" *ngIf="profileSummary" role="tablist" aria-label="Profile sections">
+            <button type="button" role="tab" [class.active]="activeProfileTab === 'profile'" [attr.aria-selected]="activeProfileTab === 'profile'" (click)="activeProfileTab = 'profile'">Profile</button>
+            <button type="button" role="tab" [class.active]="activeProfileTab === 'history'" [attr.aria-selected]="activeProfileTab === 'history'" (click)="activeProfileTab = 'history'">Player history</button>
+          </nav>
           <ng-container *ngIf="profileSummary as profile">
+            <div class="profile-tab-content" *ngIf="activeProfileTab === 'profile'">
             <div class="profile-badges">
               <span>{{ profile.role }}</span>
               <span>{{ profile.planName }} plan</span>
@@ -64,6 +69,21 @@
               <div><strong>{{ profile.gamesHosted }}</strong><span>Hosted</span></div>
             </div>
             <p *ngIf="!profile.statsAvailable" class="profile-message">Some game stats are unavailable. Check Firestore access rules.</p>
+            </div>
+            <section class="profile-tab-content profile-history" *ngIf="activeProfileTab === 'history'" role="tabpanel" aria-label="Player history">
+              <p class="profile-history-summary">Games you hosted or joined</p>
+              <div class="profile-game-list" *ngIf="profile.games.length; else noProfileGames">
+                <article class="profile-game" *ngFor="let game of profile.games">
+                  <div class="profile-game-info">
+                    <strong>#{{ game.gameId }} · {{ game.name }}</strong>
+                    <span>{{ game.role }}<ng-container *ngIf="game.createdAt"> · {{ game.createdAt | date:'MMM d, y' }}</ng-container></span>
+                  </div>
+                  <a *ngIf="game.isOpen" class="profile-game-link" [routerLink]="['/raffles', game.gameId]" (click)="profileOpen = false">Resume</a>
+                  <span *ngIf="!game.isOpen" class="profile-game-closed">Closed</span>
+                </article>
+              </div>
+              <ng-template #noProfileGames><p class="profile-message">No hosted or joined games yet.</p></ng-template>
+            </section>
           </ng-container>
           <button *ngIf="user" class="profile-logout" type="button" (click)="signOut()">Log out</button>
         </section>

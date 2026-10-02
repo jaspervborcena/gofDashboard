@@ -1,4 +1,4 @@
-<main class="app-shell" *ngIf="raffle; else loading">
+<main class="app-shell" *ngIf="raffle && !isParticipantView; else loading">
   <section class="raffle-detail" [class.players-view]="activeTab === 'players'" [attr.aria-busy]="isSpinning" [attr.inert]="spinExitDialogOpen ? '' : null">
     <div class="game-topbar">
       <a class="brand-button" [routerLink]="isSpinning ? null : '/'" (click)="handleBrandClick($event)" aria-label="Go to Game of Fortunes home">
@@ -99,8 +99,8 @@
 
     <div class="tab-content" *ngIf="activeTab === 'players'">
       <div class="player-tabs">
-        <button [class.active]="activePlayersTab === 'names'" (click)="selectPlayersTab('names')">🎯 Participant names</button>
-        <button [class.active]="activePlayersTab === 'text'" (click)="selectPlayersTab('text')">📋 Participant list editor</button>
+        <button [class.active]="activePlayersTab === 'names'" aria-label="Participant names" (click)="selectPlayersTab('names')">NAMES</button>
+        <button [class.active]="activePlayersTab === 'text'" aria-label="Participant list editor" (click)="selectPlayersTab('text')">LIST EDITOR</button>
       </div>
 
       <div class="player-panel" *ngIf="activePlayersTab === 'names'">
@@ -111,7 +111,7 @@
         </div>
         <label class="number-toggle">
           <input type="checkbox" [(ngModel)]="useJoinedNumber" />
-          I want to enter my own ticket number
+          <span>I want to enter my own ticket number</span>
         </label>
         <div class="join-row">
           <input *ngIf="useJoinedNumber" [(ngModel)]="joinedNumber" (keydown.enter)="joinEntry()" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" spellcheck="false" [attr.maxlength]="raffle.digitCount ?? 3" placeholder="Ticket number" aria-label="Ticket number" />
@@ -155,8 +155,8 @@
 
     <div class="tab-content" *ngIf="activeTab === 'history'">
       <div class="player-tabs history-tabs">
-        <button [class.active]="historySubTab === 'history'" (click)="historySubTab = 'history'">Game History</button>
-        <button [class.active]="historySubTab === 'winners'" (click)="historySubTab = 'winners'">Excluded Winners</button>
+        <button [class.active]="historySubTab === 'history'" aria-label="Game history" (click)="historySubTab = 'history'">HISTORY</button>
+        <button [class.active]="historySubTab === 'winners'" aria-label="Excluded winners" (click)="historySubTab = 'winners'">EXCLUDED</button>
       </div>
       <div class="player-panel" *ngIf="historySubTab === 'history'">
         <h2>Game History</h2><p class="player-help">Players who have already won</p>
@@ -201,6 +201,28 @@
       </div>
     </section>
   </div>
+</main>
+
+<main class="app-shell" *ngIf="raffle && isParticipantView">
+  <section class="raffle-detail participant-game-view">
+    <div class="game-topbar">
+      <a class="brand-button" routerLink="/" aria-label="Go to Game of Fortunes home">
+        <img src="assets/gofv2logo.png" alt="Game of Fortunes" />
+      </a>
+      <div class="game-title">
+        <p class="eyebrow">PLAYER GAME</p>
+        <h1>{{ raffle.name }}</h1>
+        <span>GAME #{{ raffle.gameId }}</span>
+      </div>
+      <span class="participant-game-status" [class.closed]="!isRaffleCurrent">{{ isRaffleCurrent ? 'OPEN' : 'CLOSED' }}</span>
+    </div>
+    <section class="player-panel participant-ticket" *ngIf="participantGameEntry as entry">
+      <p class="eyebrow">YOUR ENTRY</p>
+      <strong>{{ formatPlayerNumber(entry) }}</strong>
+      <span>{{ entry.name }}</span>
+    </section>
+    <a class="participant-home-link" routerLink="/">Back home</a>
+  </section>
 </main>
 
 <ng-template #loading>

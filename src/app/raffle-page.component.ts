@@ -28,6 +28,8 @@ export class RafflePageComponent implements OnDestroy, OnInit {
   private spinSlowdownDuration = 0;
 
   raffle: Raffle | null = null;
+  participantGameEntry: Player | null = null;
+  isParticipantView = false;
   isPreviewRaffle = false;
   activeTab: 'raffle' | 'players' | 'history' | 'qr' = 'raffle';
   activePlayersTab: 'names' | 'text' = 'names';
@@ -273,6 +275,8 @@ export class RafflePageComponent implements OnDestroy, OnInit {
   ngOnInit(): void {
     this.updateParticipantPageSize();
     this.route.paramMap.subscribe(async (params) => {
+      this.isParticipantView = false;
+      this.participantGameEntry = null;
       const id = params.get('id');
       if (!id) {
         this.isPreviewRaffle = true;
@@ -286,10 +290,44 @@ export class RafflePageComponent implements OnDestroy, OnInit {
         return;
       }
 
-      const raffles = await this.raffleService.listRaffles();
-      this.raffle = raffles.find((item) => item.id === id || item.gameId === id) ?? null;
+      this.raffle = await this.raffleService.findRaffle(id);
       if (this.raffle) {
         this.isPreviewRaffle = false;
+        const currentUserId = this.raffleService.currentUserId;
+        if (this.raffle.creatorId !== currentUserId) {
+          const participant = currentUserId
+            ? await this.raffleService.findUserParticipantForGame(this.raffle.gameUid, currentUserId)
+            : null;
+          if (participant) {
+            this.isParticipantView = true;
+            this.participantGameEntry = {
+              id: participant.id,
+              userId: participant.userId,
+              name: participant.name,
+              assignedNumber: participant.assignedNumber,
+              ...(participant.ticketCode ? { ticketCode: participant.ticketCode } : {}),
+              drawn: participant.status === 'winner',
+              status: participant.status,
+              ...(participant.mobileNumber ? { mobileNumber: participant.mobileNumber } : {}),
+              ...(participant.remarks ? { remarks: participant.remarks } : {})
+            };
+            return;
+          }
+
+          if (this.raffleService.isRaffleActive(this.raffle)) {
+            await this.router.navigate(['/games', this.raffle.gameId, 'join']);
+            return;
+          }
+
+          await this.router.navigate(['/raffle-unavailable'], {
+            queryParams: {
+              title: 'Raffle unavailable',
+              message: 'This raffle could not be found, has expired, or is no longer available.'
+            }
+          });
+          return;
+        }
+
         const ownerPlan = await this.raffleService.getCurrentUserPlan(this.raffle.creatorId);
         const catalogPlan = planCatalog.find((item) => item.id === (ownerPlan === 'free' ? 'freemium' : ownerPlan));
         this.playerLimit = catalogPlan?.maxPlayers ?? FREE_MAX_PLAYERS;

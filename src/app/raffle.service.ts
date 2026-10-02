@@ -61,9 +61,18 @@ export interface UserProfileSummary {
   monthlySpinLimit: number;
   gamesHosted: number;
   gamesParticipated: number;
+  games: UserProfileGame[];
   statsAvailable: boolean;
   wins: number;
   losses: number;
+}
+
+export interface UserProfileGame {
+  gameId: string;
+  name: string;
+  role: 'Hosted' | 'Participated' | 'Hosted & participated';
+  createdAt: string;
+  isOpen: boolean;
 }
 
 interface GuestSpinProfile {
@@ -585,6 +594,7 @@ export class RaffleService {
         monthlySpinLimit: FREE_MONTHLY_SPINS,
         gamesHosted: 0,
         gamesParticipated: 0,
+        games: [],
         statsAvailable: false,
         wins: 0,
         losses: 0
@@ -600,12 +610,16 @@ export class RaffleService {
         })))
         .catch(() => null),
       getDocs(query(collection(this.firestore, 'games'), where('creatorId', '==', userId)))
-        .then((snapshot) => snapshot.docs.map((item) => item.id))
+        .then((snapshot) => snapshot.docs.map((item) => ({
+          gameUid: item.id,
+          game: item.data() as Partial<Raffle>
+        })))
         .catch(() => null)
     ]);
     const profile = profileSnapshot?.data() ?? {};
     const participants = participantResult ?? [];
-    const hostedGameIds = hostedGamesResult ?? [];
+    const hostedGames = hostedGamesResult ?? [];
+    const hostedGameIds = hostedGames.map((game) => game.gameUid);
     let statsAvailable = participantResult !== null && hostedGamesResult !== null;
     const participantsByGame = new Map<string, ParticipantRecord[]>();
     participants.forEach((participant) => {
@@ -620,6 +634,22 @@ export class RaffleService {
     if (gameResults.some((gameSnapshot) => !gameSnapshot)) {
       statsAvailable = false;
     }
+    const gamesByUid = new Map<string, { game: Partial<Raffle>; hosted: boolean; participated: boolean }>();
+    hostedGames.forEach(({ gameUid, game }) => {
+      gamesByUid.set(gameUid, { game, hosted: true, participated: participantsByGame.has(gameUid) });
+    });
+    gameResults.forEach((gameSnapshot, index) => {
+      if (!gameSnapshot) {
+        return;
+      }
+      const gameUid = [...participantsByGame.keys()][index];
+      const existing = gamesByUid.get(gameUid);
+      gamesByUid.set(gameUid, {
+        game: gameSnapshot.data() as Partial<Raffle>,
+        hosted: existing?.hosted ?? false,
+        participated: true
+      });
+    });
     let wins = 0;
     let losses = 0;
     gameResults.forEach((gameSnapshot, index) => {
@@ -669,6 +699,27 @@ export class RaffleService {
       monthlySpinLimit: catalogPlan?.monthlySpins ?? FREE_MONTHLY_SPINS,
       gamesHosted: hostedGameIds.length,
       gamesParticipated: participantsByGame.size,
+      games: [...gamesByUid.entries()]
+        .map(([gameUid, { game, hosted, participated }]) => {
+          const createdAt = String(game.createdAt ?? '');
+          const closeAt = String(game.closeAt ?? game.closedAt ?? '');
+          const role: UserProfileGame['role'] = hosted && participated
+            ? 'Hosted & participated'
+            : hosted ? 'Hosted' : 'Participated';
+          return {
+            gameId: String(game.gameId ?? gameUid),
+            name: String(game.name ?? 'Untitled game'),
+            role,
+            createdAt,
+            isOpen: this.isRaffleActive({
+              startAt: String(game.startAt ?? createdAt),
+              closeAt,
+              closedAt: closeAt,
+              createdAt
+            })
+          };
+        })
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
       statsAvailable,
       wins,
       losses
@@ -845,6 +896,20 @@ export class RaffleService {
     return snapshot.docs
       .map((item) => ({ ...(item.data() as ParticipantRecord), id: item.id }))
       .filter((item) => item.gameUid === gameUid);
+  }
+
+  async findUserParticipantForGame(gameUid: string, userId: string): Promise<ParticipantRecord | null> {
+    if (!this.firestoreEnabled) {
+      return null;
+    }
+
+    const snapshot = await getDocs(query(
+      collection(this.firestore, 'participants'),
+      where('userId', '==', userId)
+    ));
+    return snapshot.docs
+      .map((item) => ({ ...(item.data() as ParticipantRecord), id: item.id }))
+      .find((item) => item.gameUid === gameUid) ?? null;
   }
 
   async listGameHistory(gameUid: string): Promise<GameHistoryRecord[]> {
