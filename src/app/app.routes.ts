@@ -9,9 +9,13 @@ import { RaffleUnavailablePageComponent } from './raffle-unavailable-page.compon
 import { DownloadPageComponent } from './download-page.component';
 import { DonationPageComponent } from './donation-page.component';
 import { PremiumPageComponent } from './premium-page.component';
+import { AdminDashboardComponent } from './admin-dashboard.component';
 
 export const routes: Routes = [
-  { path: '', component: HomePageComponent },
+  { path: '', component: AdminDashboardComponent },
+  { path: 'admin/games', component: AdminDashboardComponent },
+  { path: 'admin/users', component: AdminDashboardComponent },
+  { path: 'home', component: HomePageComponent },
   { path: 'signin', component: SignInComponent },
   { path: 'plans', component: PlansPageComponent },
   { path: 'download', component: DownloadPageComponent },

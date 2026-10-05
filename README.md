@@ -72,31 +72,6 @@ npm start
 
 `npm start` builds the app and serves the generated files with `server.js`. The server defaults to port `8080`, uses the `PORT` environment variable when provided, and exposes `/health` for health checks.
 
-## Payment and Winner API
-
-The NestJS HTTP API is in `raffle-grpc/` (the directory name is historical; the current service uses HTTP, not native gRPC). To run it locally:
-
-```bash
-cd raffle-grpc
-npm install
-npm run start:dev
-```
-
-The production workflow is `npm run build` followed by `npm start`. Configure provider credentials and Firebase Admin credentials in the backend runtime; see `raffle-grpc/.env.example`. Firebase Admin uses Application Default Credentials in Cloud Run.
-
-Available API routes include:
-
-- `GET /payments/paypal/config`
-- `POST /payments/paypal/order`
-- `POST /payments/paypal/capture`
-- `POST /payments/maya/checkout`
-- `POST /payments/maya/orders/:paymentOrderId/status`
-- `POST /webhooks/paypal`
-- `POST /webhooks/maya`
-- `POST /winners`
-
-Payment order and status routes require a Firebase ID token. The backend calculates payment amounts from the selected package and duration; it does not trust client-provided prices. Although Maya endpoints exist in the backend, the app currently disables Maya checkout.
-
 ## Android App
 
 The Capacitor app ID is `com.gameoffortunes.app`, with web output in `dist/gofv2/browser`. The Download page links to the published APK when available.

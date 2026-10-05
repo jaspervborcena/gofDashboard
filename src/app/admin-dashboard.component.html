@@ -1,0 +1,182 @@
+<div class="dashboard-layout" *ngIf="!loading && !accessDenied; else gateState">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/" aria-label="Game of Fortunes admin overview">
+      <span class="brand-symbol">GF</span>
+      <span class="brand-label"><strong>FORTUNES</strong><small>ADMIN CONSOLE</small></span>
+    </a>
+
+    <div class="nav-caption">WORKSPACE</div>
+    <nav class="side-nav" aria-label="Dashboard sections">
+      <a routerLink="/" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="selected">
+        <span class="nav-mark overview-mark" aria-hidden="true"></span><span>Overview</span>
+      </a>
+      <a routerLink="/admin/games" routerLinkActive="selected">
+        <span class="nav-mark games-mark" aria-hidden="true"></span><span>Games</span>
+        <span class="nav-count" *ngIf="activeGames.length">{{ activeGames.length }}</span>
+      </a>
+      <a routerLink="/admin/users" routerLinkActive="selected">
+        <span class="nav-mark users-mark" aria-hidden="true"></span><span>Users</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-project"><span class="project-dot"></span><span>Game of Fortunes</span><small>LIVE PROJECT</small></div>
+    <div class="sidebar-user">
+      <span class="admin-avatar">{{ adminName.slice(0, 1).toUpperCase() }}</span>
+      <span class="admin-identity"><strong>{{ adminName }}</strong><small>{{ adminEmail || 'Administrator' }}</small></span>
+      <button type="button" class="sign-out" (click)="signOut()" aria-label="Sign out" title="Sign out">↗</button>
+    </div>
+  </aside>
+
+  <main class="dashboard-main">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">GAME OF FORTUNES / ADMIN</p>
+        <h1>{{ pageTitle }}</h1>
+        <p class="page-subtitle" *ngIf="currentView === 'overview'">A live read on games, players, and winners.</p>
+        <p class="page-subtitle" *ngIf="currentView === 'games'">Active draws, hosts, and participation at a glance.</p>
+        <p class="page-subtitle" *ngIf="currentView === 'users'">Account directory and current subscription plans.</p>
+      </div>
+      <div class="header-actions">
+        <button class="mobile-sign-out" type="button" (click)="signOut()" aria-label="Sign out" title="Sign out">↗</button>
+        <label class="period-control" *ngIf="currentView === 'overview'">
+          <span>PERIOD</span>
+          <select [ngModel]="period" (ngModelChange)="setPeriod($event)" aria-label="Overview reporting period">
+            <option *ngFor="let item of periods" [ngValue]="item.id">{{ item.label }}</option>
+          </select>
+        </label>
+        <button class="refresh-button" type="button" (click)="refresh()" [disabled]="loadingData" aria-label="Refresh dashboard data" title="Refresh dashboard data">
+          <span aria-hidden="true">↻</span><span>Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <p class="alert error-alert" *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
+    <p class="alert loading-alert" *ngIf="loadingData" role="status">Updating dashboard data...</p>
+
+    <ng-container *ngIf="data">
+      <section class="overview-content" *ngIf="currentView === 'overview'">
+        <div class="metric-grid" aria-label="Selected period totals">
+          <article class="metric metric-games">
+            <span class="metric-label">GAMES CREATED</span>
+            <strong>{{ periodGamesCreated | number }}</strong>
+            <span class="metric-note">{{ periodLabel }}</span>
+            <span class="metric-glyph" aria-hidden="true">G</span>
+          </article>
+          <article class="metric metric-users">
+            <span class="metric-label">NEW USERS</span>
+            <strong>{{ periodUsersCreated | number }}</strong>
+            <span class="metric-note">{{ data.users.length | number }} total accounts</span>
+            <span class="metric-glyph" aria-hidden="true">U</span>
+          </article>
+          <article class="metric metric-winners">
+            <span class="metric-label">WINNERS</span>
+            <strong>{{ periodWinnerCount | number }}</strong>
+            <span class="metric-note">{{ periodLabel }}</span>
+            <span class="metric-glyph" aria-hidden="true">W</span>
+          </article>
+          <article class="metric metric-participants">
+            <span class="metric-label">PARTICIPANTS</span>
+            <strong>{{ periodParticipantCount | number }}</strong>
+            <span class="metric-note">{{ periodLabel }}</span>
+            <span class="metric-glyph" aria-hidden="true">P</span>
+          </article>
+        </div>
+
+        <section class="table-panel overview-games-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">LIVE NOW</p><h2>Active games</h2></div>
+            <a class="text-link" routerLink="/admin/games">All games <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="empty-state" *ngIf="!overviewGames.length">No active games right now.</div>
+          <div class="table-scroll" *ngIf="overviewGames.length">
+            <table>
+              <thead><tr><th>GAME</th><th>HOST</th><th>PLAN</th><th>PARTICIPANTS</th><th>WINNERS</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let game of overviewGames">
+                  <td><strong class="game-name">{{ game.name || 'Untitled game' }}</strong><small>#{{ game.gameId || game.id }}</small></td>
+                  <td>{{ creatorName(game) }}</td>
+                  <td><span class="plan-pill" [class.plan-free]="gamePlan(game) === 'Free'">{{ gamePlan(game) }}</span></td>
+                  <td>{{ participantsFor(game, true) | number }}</td>
+                  <td>{{ winnersFor(game, true) | number }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="panel-footnote">Game activity reflects {{ periodLabel.toLowerCase() }} activity; active status is based on each game's scheduled start and close dates.</p>
+        </section>
+      </section>
+
+      <section class="directory-content" *ngIf="currentView === 'games'">
+        <div class="directory-summary"><strong>{{ activeGames.length | number }}</strong><span>active {{ activeGames.length === 1 ? 'game' : 'games' }}</span><span class="sort-note">Newest first</span></div>
+        <div class="table-panel">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>GAME</th><th>CREATED BY</th><th>EMAIL</th><th>PLAN</th><th>PARTICIPANTS</th><th>WINNERS</th><th>CREATED</th><th>CLOSES</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let game of gameRows">
+                  <td><strong class="game-name">{{ game.name || 'Untitled game' }}</strong><small>#{{ game.gameId || game.id }}</small></td>
+                  <td>{{ creatorName(game) }}</td>
+                  <td class="email-cell">{{ creatorEmail(game) }}</td>
+                  <td><span class="plan-pill" [class.plan-free]="gamePlan(game) === 'Free'">{{ gamePlan(game) }}</span></td>
+                  <td>{{ participantsFor(game) | number }}</td>
+                  <td>{{ winnersFor(game) | number }}</td>
+                  <td>{{ displayDate(game.createdAt) | date:'MMM d, y' }}</td>
+                  <td>{{ displayDate(game.closeAt || game.closedAt) | date:'MMM d, y' }}</td>
+                </tr>
+                <tr *ngIf="!gameRows.length"><td colspan="8" class="empty-state">No active games found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <footer class="pagination">
+            <span>Showing {{ gameRangeStart }}–{{ gameRangeEnd }} of {{ activeGames.length | number }} games</span>
+            <div><button type="button" (click)="previousGamesPage()" [disabled]="gamePage <= 1" aria-label="Previous games page">Previous</button><span>Page {{ gamePage }} of {{ gamePageCount }}</span><button type="button" (click)="nextGamesPage()" [disabled]="gamePage >= gamePageCount" aria-label="Next games page">Next</button></div>
+          </footer>
+        </div>
+      </section>
+
+      <section class="directory-content" *ngIf="currentView === 'users'">
+        <div class="directory-summary"><strong>{{ sortedUsers.length | number }}</strong><span>total {{ sortedUsers.length === 1 ? 'user' : 'users' }}</span><span class="sort-note">Newest first</span></div>
+        <div class="table-panel">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>USER</th><th>EMAIL</th><th>PLAN</th><th>ROLE</th><th>GAMES HOSTED</th><th>JOINED</th><th>LAST ACTIVE</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let user of userRows">
+                  <td><strong class="user-name">{{ userName(user) }}</strong></td>
+                  <td class="email-cell">{{ user.email || 'Email not provided' }}</td>
+                  <td><span class="plan-pill" [class.plan-free]="userPlan(user) === 'Free'">{{ userPlan(user) }}</span></td>
+                  <td>{{ user.role || 'guest' }}</td>
+                  <td>{{ gamesHosted(user) | number }}</td>
+                  <td>{{ displayDate(user.createdAt) | date:'MMM d, y' }}</td>
+                  <td>{{ displayDate(user.lastActiveAt) | date:'MMM d, y' }}</td>
+                </tr>
+                <tr *ngIf="!userRows.length"><td colspan="7" class="empty-state">No users found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <footer class="pagination">
+            <span>Showing {{ userRangeStart }}–{{ userRangeEnd }} of {{ sortedUsers.length | number }} users</span>
+            <div><button type="button" (click)="previousUsersPage()" [disabled]="userPage <= 1" aria-label="Previous users page">Previous</button><span>Page {{ userPage }} of {{ userPageCount }}</span><button type="button" (click)="nextUsersPage()" [disabled]="userPage >= userPageCount" aria-label="Next users page">Next</button></div>
+          </footer>
+        </div>
+      </section>
+    </ng-container>
+  </main>
+</div>
+
+<ng-template #gateState>
+  <main class="gate-screen" *ngIf="loading; else accessState"><div class="gate-mark">GF</div><p>Checking administrator access...</p></main>
+</ng-template>
+
+<ng-template #accessState>
+  <main class="gate-screen">
+    <div class="gate-mark">GF</div>
+    <p class="eyebrow">GAME OF FORTUNES / ADMIN</p>
+    <h1 *ngIf="accessDenied">Administrator access required</h1>
+    <h1 *ngIf="!accessDenied">Dashboard unavailable</h1>
+    <p *ngIf="accessDenied">This account is not on the dashboard administrator list.</p>
+    <p *ngIf="errorMessage" role="alert">{{ errorMessage }}</p>
+    <button type="button" (click)="signOut()">Sign out</button>
+  </main>
+</ng-template>

@@ -116,6 +116,14 @@ main.app-shell {
   padding-top: 0.25rem;
 }
 
+main.app-shell.admin-shell {
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+}
+
 @media (max-width: 600px) {
   .top-bar .app-shell { padding-top: 0.35rem; }
   main.app-shell { padding: 0.5rem 0.65rem 1rem; }

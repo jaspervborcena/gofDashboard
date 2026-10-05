@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router } from '@angular/router';
-import { convertToParamMap } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import { convertToParamMap, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { RafflePageComponent } from './raffle-page.component';
 import { RaffleService } from './raffle.service';
 
@@ -12,24 +13,20 @@ describe('RafflePageComponent', () => {
     await TestBed.configureTestingModule({
       imports: [RafflePageComponent],
       providers: [
+        provideRouter([]),
         {
           provide: RaffleService,
           useValue: {
             setRaffleSpinning: () => undefined,
+            isRaffleActive: () => true,
             consumeSpin: async () => ({ allowed: true, spinsRemaining: 1 }),
           },
         },
         {
           provide: ActivatedRoute,
           useValue: {
+            paramMap: of(convertToParamMap({})),
             snapshot: { paramMap: convertToParamMap({}) },
-          },
-        },
-        {
-          provide: Router,
-          useValue: {
-            navigateByUrl: async () => true,
-            url: '/',
           },
         },
       ],

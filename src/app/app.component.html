@@ -1,4 +1,4 @@
-<header class="top-bar" [attr.inert]="raffleService.raffleSpinning() ? '' : null">
+<header *ngIf="!isAdminDashboardRoute" class="top-bar" [attr.inert]="raffleService.raffleSpinning() ? '' : null">
   <div class="app-shell">
     <div class="top-right">
       <span *ngIf="user" class="welcome">Welcome {{ userDisplayName }}!</span>
@@ -94,8 +94,8 @@
   
 </header>
 
-<main class="app-shell">
+<main class="app-shell" [class.admin-shell]="isAdminDashboardRoute">
   <router-outlet></router-outlet>
-  <app-features-footer [attr.inert]="raffleService.raffleSpinning() ? '' : null"></app-features-footer>
-  <app-ad-banner *ngIf="!adFree" [attr.inert]="raffleService.raffleSpinning() ? '' : null"></app-ad-banner>
+  <app-features-footer *ngIf="!isAdminDashboardRoute" [attr.inert]="raffleService.raffleSpinning() ? '' : null"></app-features-footer>
+  <app-ad-banner *ngIf="!isAdminDashboardRoute && !adFree" [attr.inert]="raffleService.raffleSpinning() ? '' : null"></app-ad-banner>
 </main>

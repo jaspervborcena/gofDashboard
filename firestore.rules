@@ -6,6 +6,12 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.enabled == true;
+    }
+
     function ownsGame(gameUid) {
       return signedIn()
         && exists(/databases/$(database)/documents/games/$(gameUid))
@@ -32,11 +38,16 @@ service cloud.firestore {
           || request.resource.data.get('spinsRemaining', 0) <= resource.data.get('spinsRemaining', 0));
     }
 
+    match /admins/{adminId} {
+      allow read: if signedIn() && request.auth.uid == adminId;
+      allow write: if false;
+    }
+
     match /users/{userId} {
       allow create: if signedIn()
         && request.auth.uid == userId
         && (!request.resource.data.keys().hasAny(['plan']) || request.resource.data.plan == 'free');
-      allow read: if signedIn() && request.auth.uid == userId;
+      allow read: if (signedIn() && request.auth.uid == userId) || isAdmin();
       allow update: if signedIn()
         && request.auth.uid == userId
         && (validProfileUpdate() || validUsageUpdate());
@@ -44,7 +55,7 @@ service cloud.firestore {
     }
 
     match /subscriptions/{subscriptionId} {
-      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow read: if (signedIn() && resource.data.uid == request.auth.uid) || isAdmin();
       allow write: if false;
     }
 
@@ -68,7 +79,8 @@ service cloud.firestore {
     }
 
     match /participants/{participantId} {
-      allow read: if ownsGame(resource.data.gameUid)
+      allow read: if isAdmin()
+        || ownsGame(resource.data.gameUid)
         || (signedIn() && resource.data.userId == request.auth.uid);
       allow create: if ownsGame(request.resource.data.gameUid)
         || (signedIn()
@@ -84,12 +96,12 @@ service cloud.firestore {
     }
 
     match /history/{historyId} {
-      allow read: if ownsGame(resource.data.gameUid);
+      allow read: if isAdmin() || ownsGame(resource.data.gameUid);
       allow create, update: if ownsGame(request.resource.data.gameUid);
     }
 
     match /winners/{winnerId} {
-      allow read: if ownsGame(resource.data.gameUid);
+      allow read: if isAdmin() || ownsGame(resource.data.gameUid);
       allow create, update: if ownsGame(request.resource.data.gameUid);
     }
 

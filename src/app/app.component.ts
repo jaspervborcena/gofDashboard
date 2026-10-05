@@ -1,7 +1,7 @@
 import { Component, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterOutlet, RouterLink } from '@angular/router';
+import { Router, RouterOutlet, RouterLink } from '@angular/router';
 import { RaffleService, UserProfileSummary } from './raffle.service';
 import { AdBannerComponent } from './ad-banner.component';
 import { FeaturesFooterComponent } from './features-footer.component';
@@ -17,6 +17,7 @@ import { FeaturesFooterComponent } from './features-footer.component';
 export class AppComponent {
   title = 'Game of Fortunes';
   raffleService = inject(RaffleService);
+  private readonly router = inject(Router);
   user: { uid: string; displayName?: string | null; email?: string | null; photoURL?: string | null; phoneNumber?: string | null } | null = null;
   adFree = false;
   profileOpen = false;
@@ -32,6 +33,11 @@ export class AppComponent {
   savedProfilePhoneNumber = '';
   profileSaving = false;
   profileSaveMessage = '';
+
+  get isAdminDashboardRoute(): boolean {
+    const route = this.router.url.split('?')[0];
+    return route === '/' || route.startsWith('/admin/');
+  }
 
   constructor() {
     this.raffleService.user$.subscribe(async (authUser) => {

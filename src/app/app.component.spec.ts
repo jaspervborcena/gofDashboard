@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { AppComponent } from './app.component';
@@ -19,6 +20,7 @@ describe('AppComponent', () => {
           provide: RaffleService,
           useValue: {
             user$: userSubject.asObservable(),
+            raffleSpinning: () => false,
             signOut: jasmine.createSpy('signOut'),
             getCurrentUserPlan: jasmine.createSpy('getCurrentUserPlan').and.resolveTo('free'),
             ensureUserSpinFields: jasmine.createSpy('ensureUserSpinFields').and.resolveTo(undefined),
@@ -55,7 +57,8 @@ describe('AppComponent', () => {
     expect(outlet).not.toBeNull();
   });
 
-  it('should use the email local part when display name is missing', () => {
+  it('should use the email local part on the public home page when display name is missing', () => {
+    spyOnProperty(TestBed.inject(Router), 'url', 'get').and.returnValue('/home');
     userSubject.next({ uid: 'abc123', displayName: null, email: 'player@gmail.com' });
     fixture.detectChanges();
 
