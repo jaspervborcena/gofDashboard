@@ -215,12 +215,74 @@ h2 {
 }
 
 .draw-result {
+  position: relative;
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 145, 0, 0.05));
   border: 2px solid rgba(255, 207, 77, 0.5);
   border-radius: 16px;
   padding: 1.2rem;
   margin-bottom: 1rem;
   box-shadow: 0 0 30px rgba(255, 145, 0, 0.3);
+}
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0.45rem;
+  height: 0.8rem;
+  background: #ffd700;
+  border-radius: 0.2rem;
+  animation: raffle-confetti-fall 2.6s cubic-bezier(0.2, 0.75, 0.35, 1) forwards;
+  animation-delay: calc(var(--confetti-index) * 28ms);
+  transform: rotate(calc(var(--confetti-index) * 31deg));
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+.confetti-piece:nth-child(3n) {
+  background: #ff6b6b;
+}
+
+.confetti-piece:nth-child(3n + 1) {
+  background: #62e6c5;
+}
+
+.confetti-piece:nth-child(4n) {
+  border-radius: 50%;
+}
+
+.confetti-piece:nth-child(5n) {
+  width: 0.7rem;
+  height: 0.35rem;
+}
+
+@keyframes raffle-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate(calc(var(--confetti-index) * 1.8rem - 25rem), -1rem) rotate(0) scale(0.35);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  55% {
+    opacity: 1;
+    transform: translate(calc(var(--confetti-index) * 2.1rem - 29rem), 7rem) rotate(260deg) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--confetti-index) * 2.5rem - 34rem), 16rem) rotate(680deg) scale(0.75);
+  }
 }
 
 .draw-result h3 {

@@ -64,6 +64,9 @@
             </div>
             <div class="reel-lights"></div>
             <div class="draw-result" *ngIf="lastWinner" role="dialog" aria-labelledby="winner-dialog-title">
+              <div class="confetti" aria-hidden="true">
+                <span class="confetti-piece" *ngFor="let piece of confettiPieces" [style.--confetti-index]="piece"></span>
+              </div>
               <button class="winner-dialog-close" type="button" aria-label="Close winner dialog" (click)="dismissWinnerDialog()">×</button>
               <h3 id="winner-dialog-title">Congratulations!!!</h3>
               <p class="winner-text"><strong>Winner: {{ lastWinner.number }} • {{ lastWinner.name }}</strong></p>

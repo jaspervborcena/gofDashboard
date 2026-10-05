@@ -62,6 +62,7 @@ export class RafflePageComponent implements OnDestroy, OnInit {
   rightPanelOpen = false;
   participantPage = 1;
   participantPageSize = 20;
+  confettiPieces = Array.from({ length: 28 }, (_, index) => index);
 
   ngOnDestroy(): void {
     this.raffleService.setRaffleSpinning(false);
