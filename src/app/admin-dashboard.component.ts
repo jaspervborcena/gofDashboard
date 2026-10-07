@@ -3,7 +3,7 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { AdminDashboardData, AdminDashboardService, AdminGameRecord, AdminParticipantRecord, AdminSubscriptionRecord, AdminUserRecord } from './admin-dashboard.service';
+import { AdminDashboardData, AdminDashboardService, AdminGameRecord, AdminParticipantRecord, AdminUserRecord } from './admin-dashboard.service';
 import { RaffleService } from './raffle.service';
 
 type DashboardPeriod = 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth';
@@ -41,6 +41,10 @@ export class AdminDashboardComponent implements OnInit {
   loadingData = false;
   accessDenied = false;
   errorMessage = '';
+  selectedOverviewGameIds = new Set<string>();
+  showDeleteGamesConfirmation = false;
+  deletingGames = false;
+  deleteGamesErrorMessage = '';
 
   ngOnInit(): void {
     this.raffleService.user$
@@ -58,18 +62,24 @@ export class AdminDashboardComponent implements OnInit {
       });
   }
 
-  get currentView(): 'overview' | 'games' | 'users' {
+  get currentView(): 'overview' | 'games' | 'users' | 'participants' {
     if (this.router.url.startsWith('/admin/games')) {
       return 'games';
     }
     if (this.router.url.startsWith('/admin/users')) {
       return 'users';
     }
+    if (this.router.url.startsWith('/admin/participants')) {
+      return 'participants';
+    }
     return 'overview';
   }
 
   get pageTitle(): string {
-    return this.currentView === 'games' ? 'Active games' : this.currentView === 'users' ? 'Users' : 'Overview';
+    if (this.currentView === 'games') return 'Active games';
+    if (this.currentView === 'users') return 'Users';
+    if (this.currentView === 'participants') return 'Participants';
+    return 'Overview';
   }
 
   get activeGames(): AdminGameRecord[] {
@@ -81,6 +91,79 @@ export class AdminDashboardComponent implements OnInit {
   get sortedUsers(): AdminUserRecord[] {
     return [...(this.data?.users ?? [])]
       .sort((left, right) => this.dateTime(right.createdAt) - this.dateTime(left.createdAt));
+  }
+
+  participantSearch = '';
+  participantGameFilter = '';
+  participantHostFilter = '';
+  participantFromDate = '';
+  participantToDate = '';
+  participantPage = 1;
+  selectedParticipantIds = new Set<string>();
+  showDeleteConfirmation = false;
+  deletingParticipants = false;
+  deleteErrorMessage = '';
+
+  get participantGames(): AdminGameRecord[] {
+    return [...(this.data?.games ?? [])]
+      .sort((left, right) => this.dateTime(right.createdAt) - this.dateTime(left.createdAt));
+  }
+
+  get participantHosts(): string[] {
+    return [...new Set(this.participantGames.map((game) => game.creatorId).filter((id): id is string => !!id))]
+      .sort((left, right) => this.hostName(left).localeCompare(this.hostName(right)));
+  }
+
+  get filteredParticipants(): AdminParticipantRecord[] {
+    const search = this.participantSearch.trim().toLocaleLowerCase();
+    const from = this.participantFromDate ? new Date(`${this.participantFromDate}T00:00:00`).getTime() : null;
+    const to = this.participantToDate ? new Date(`${this.participantToDate}T23:59:59.999`).getTime() : null;
+
+    return [...(this.data?.participants ?? [])]
+      .filter((participant) => {
+        const game = this.gameForParticipant(participant);
+        const joinedAt = this.dateTime(participant.joinedAt);
+        const hostId = game?.creatorId ?? '';
+        if (this.participantGameFilter && (game?.gameUid || game?.id) !== this.participantGameFilter) return false;
+        if (this.participantHostFilter && hostId !== this.participantHostFilter) return false;
+        if (participant.status === 'removed') return false;
+        if (from !== null && (!joinedAt || joinedAt < from)) return false;
+        if (to !== null && (!joinedAt || joinedAt > to)) return false;
+        if (!search) return true;
+
+        const searchable = [
+          participant.name,
+          participant.ticketCode,
+          participant.mobileNumber,
+          game?.name,
+          this.hostName(hostId),
+          this.userFor(participant.userId)?.email
+        ].join(' ').toLocaleLowerCase();
+        return searchable.includes(search);
+      })
+      .sort((left, right) => this.dateTime(right.joinedAt) - this.dateTime(left.joinedAt));
+  }
+
+  get participantRows(): AdminParticipantRecord[] {
+    const start = (this.participantPage - 1) * this.pageSize;
+    return this.filteredParticipants.slice(start, start + this.pageSize);
+  }
+
+  get participantPageCount(): number {
+    return Math.max(1, Math.ceil(this.filteredParticipants.length / this.pageSize));
+  }
+
+  get participantRangeStart(): number {
+    return this.filteredParticipants.length ? (this.participantPage - 1) * this.pageSize + 1 : 0;
+  }
+
+  get participantRangeEnd(): number {
+    return Math.min(this.participantPage * this.pageSize, this.filteredParticipants.length);
+  }
+
+  get allFilteredParticipantsSelected(): boolean {
+    return this.filteredParticipants.length > 0
+      && this.filteredParticipants.every((participant) => this.selectedParticipantIds.has(participant.id));
   }
 
   get gameRows(): AdminGameRecord[] {
@@ -141,6 +224,61 @@ export class AdminDashboardComponent implements OnInit {
     return this.activeGames.slice(0, 6);
   }
 
+  get allOverviewGamesSelected(): boolean {
+    return this.overviewGames.length > 0
+      && this.overviewGames.every((game) => this.selectedOverviewGameIds.has(game.gameUid || game.id));
+  }
+
+  setOverviewGameSelected(gameId: string, selected: boolean): void {
+    if (selected) {
+      this.selectedOverviewGameIds.add(gameId);
+    } else {
+      this.selectedOverviewGameIds.delete(gameId);
+    }
+  }
+
+  toggleAllOverviewGames(selected: boolean): void {
+    this.selectedOverviewGameIds.clear();
+    if (selected) {
+      this.overviewGames.forEach((game) => this.selectedOverviewGameIds.add(game.gameUid || game.id));
+    }
+  }
+
+  async deleteSelectedOverviewGames(): Promise<void> {
+    if (!this.selectedOverviewGameIds.size || this.deletingGames || !this.data) return;
+    this.deletingGames = true;
+    this.deleteGamesErrorMessage = '';
+    const selectedIds = new Set(this.selectedOverviewGameIds);
+    const selectedGames = this.data.games.filter((game) => selectedIds.has(game.gameUid || game.id));
+    const selectedGameIds = new Set(selectedGames.flatMap((game) => [game.gameUid || game.id, game.gameId || game.id]));
+
+    try {
+      await this.adminDataService.deleteGames(selectedGames);
+      this.data = {
+        ...this.data,
+        games: this.data.games.filter((game) => !selectedIds.has(game.gameUid || game.id)),
+        participants: this.data.participants.filter((participant) =>
+          !selectedGameIds.has(participant.gameUid || participant.gameId || '')
+        ),
+        winners: this.data.winners.filter((winner) =>
+          !selectedGameIds.has(winner.gameUid || winner.gameId || '')
+        )
+      };
+      this.selectedOverviewGameIds.clear();
+      this.showDeleteGamesConfirmation = false;
+      this.gamePage = Math.min(this.gamePage, this.gamePageCount);
+    } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code)
+        : '';
+      this.deleteGamesErrorMessage = code
+        ? `Selected games could not be deleted (${code}). Check the deployed admin deletion rules and try again.`
+        : 'Selected games could not be deleted. Check your admin permissions and try again.';
+    } finally {
+      this.deletingGames = false;
+    }
+  }
+
   get adminEmail(): string {
     return this.adminEmailAddress;
   }
@@ -171,6 +309,88 @@ export class AdminDashboardComponent implements OnInit {
 
   userPlan(user: AdminUserRecord): string {
     return this.planFor(user);
+  }
+
+  hostName(hostId?: string): string {
+    const host = this.userFor(hostId);
+    return host?.fullName?.trim() || host?.displayName?.trim() || host?.nickname?.trim() || host?.email || 'Host not found';
+  }
+
+  participantGameName(participant: AdminParticipantRecord): string {
+    return this.gameForParticipant(participant)?.name || 'Game not found';
+  }
+
+  participantHostName(participant: AdminParticipantRecord): string {
+    return this.hostName(this.gameForParticipant(participant)?.creatorId);
+  }
+
+  participantEmail(participant: AdminParticipantRecord): string {
+    return this.userFor(participant.userId)?.email || '';
+  }
+
+  participantGameCode(participant: AdminParticipantRecord): string {
+    const game = this.gameForParticipant(participant);
+    return game?.gameId || game?.id || participant.gameId || '—';
+  }
+
+  participantStatus(participant: AdminParticipantRecord): string {
+    return participant.status || 'active';
+  }
+
+  participantFiltersChanged(): void {
+    this.participantPage = 1;
+    this.selectedParticipantIds.clear();
+    this.deleteErrorMessage = '';
+  }
+
+  setParticipantSelected(participantId: string, selected: boolean): void {
+    if (selected) {
+      this.selectedParticipantIds.add(participantId);
+    } else {
+      this.selectedParticipantIds.delete(participantId);
+    }
+  }
+
+  toggleAllFilteredParticipants(selected: boolean): void {
+    this.selectedParticipantIds.clear();
+    if (selected) {
+      this.filteredParticipants.forEach((participant) => this.selectedParticipantIds.add(participant.id));
+    }
+  }
+
+  isParticipantSelected(participantId: string): boolean {
+    return this.selectedParticipantIds.has(participantId);
+  }
+
+  previousParticipantsPage(): void {
+    this.participantPage = Math.max(1, this.participantPage - 1);
+  }
+
+  nextParticipantsPage(): void {
+    this.participantPage = Math.min(this.participantPageCount, this.participantPage + 1);
+  }
+
+  async deleteSelectedParticipants(): Promise<void> {
+    if (!this.selectedParticipantIds.size || this.deletingParticipants) return;
+    this.deletingParticipants = true;
+    this.deleteErrorMessage = '';
+    const selectedIds = new Set(this.selectedParticipantIds);
+    try {
+      await this.adminDataService.deleteParticipants([...selectedIds]);
+      if (this.data) {
+        this.data = {
+          ...this.data,
+          participants: this.data.participants.filter((participant) => !selectedIds.has(participant.id))
+        };
+      }
+      this.selectedParticipantIds.clear();
+      this.showDeleteConfirmation = false;
+      this.participantPage = Math.min(this.participantPage, this.participantPageCount);
+    } catch {
+      this.deleteErrorMessage = 'Selected players could not be deleted. Check your admin permissions and try again.';
+    } finally {
+      this.deletingParticipants = false;
+    }
   }
 
   gamesHosted(user: AdminUserRecord): number {
@@ -252,6 +472,15 @@ export class AdminDashboardComponent implements OnInit {
       return undefined;
     }
     return this.data?.users.find((user) => user.id === userId || user.uid === userId);
+  }
+
+  private gameForParticipant(participant: AdminParticipantRecord): AdminGameRecord | undefined {
+    return this.data?.games.find((game) =>
+      game.id === participant.gameUid
+      || game.gameUid === participant.gameUid
+      || game.gameId === participant.gameId
+      || game.id === participant.gameId
+    );
   }
 
   private planFor(user?: AdminUserRecord): string {

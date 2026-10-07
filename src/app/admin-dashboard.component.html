@@ -17,6 +17,10 @@
       <a routerLink="/admin/users" routerLinkActive="selected">
         <span class="nav-mark users-mark" aria-hidden="true"></span><span>Users</span>
       </a>
+      <a routerLink="/admin/participants" routerLinkActive="selected">
+        <span class="nav-mark participants-mark" aria-hidden="true"></span><span>Participants</span>
+        <span class="nav-count" *ngIf="data?.participants?.length">{{ data?.participants?.length }}</span>
+      </a>
     </nav>
 
     <div class="sidebar-spacer"></div>
@@ -36,6 +40,7 @@
         <p class="page-subtitle" *ngIf="currentView === 'overview'">A live read on games, players, and winners.</p>
         <p class="page-subtitle" *ngIf="currentView === 'games'">Active draws, hosts, and participation at a glance.</p>
         <p class="page-subtitle" *ngIf="currentView === 'users'">Account directory and current subscription plans.</p>
+        <p class="page-subtitle" *ngIf="currentView === 'participants'">Review and clean up participant rosters across games.</p>
       </div>
       <div class="header-actions">
         <button class="mobile-sign-out" type="button" (click)="signOut()" aria-label="Sign out" title="Sign out">↗</button>
@@ -86,14 +91,26 @@
         <section class="table-panel overview-games-panel">
           <div class="panel-heading">
             <div><p class="eyebrow">LIVE NOW</p><h2>Active games</h2></div>
-            <a class="text-link" routerLink="/admin/games">All games <span aria-hidden="true">→</span></a>
+            <div class="panel-actions">
+              <button class="delete-selected-button" type="button" [disabled]="!selectedOverviewGameIds.size || deletingGames" (click)="showDeleteGamesConfirmation = true">
+                <span aria-hidden="true">⌫</span> Delete selected <span *ngIf="selectedOverviewGameIds.size">({{ selectedOverviewGameIds.size }})</span>
+              </button>
+              <a class="text-link" routerLink="/admin/games">All games <span aria-hidden="true">→</span></a>
+            </div>
           </div>
+          <p class="alert error-alert overview-delete-error" *ngIf="deleteGamesErrorMessage" role="alert">{{ deleteGamesErrorMessage }}</p>
           <div class="empty-state" *ngIf="!overviewGames.length">No active games right now.</div>
           <div class="table-scroll" *ngIf="overviewGames.length">
             <table>
-              <thead><tr><th>GAME</th><th>HOST</th><th>PLAN</th><th>PARTICIPANTS</th><th>WINNERS</th></tr></thead>
+              <thead>
+                <tr>
+                  <th class="checkbox-column"><input type="checkbox" [checked]="allOverviewGamesSelected" (change)="toggleAllOverviewGames($any($event.target).checked)" aria-label="Select all active games shown"></th>
+                  <th>GAME</th><th>HOST</th><th>PLAN</th><th>PARTICIPANTS</th><th>WINNERS</th>
+                </tr>
+              </thead>
               <tbody>
                 <tr *ngFor="let game of overviewGames">
+                  <td class="checkbox-column"><input type="checkbox" [checked]="selectedOverviewGameIds.has(game.gameUid || game.id)" (change)="setOverviewGameSelected(game.gameUid || game.id, $any($event.target).checked)" [attr.aria-label]="'Select ' + (game.name || 'untitled game')"></td>
                   <td><strong class="game-name">{{ game.name || 'Untitled game' }}</strong><small>#{{ game.gameId || game.id }}</small></td>
                   <td>{{ creatorName(game) }}</td>
                   <td><span class="plan-pill" [class.plan-free]="gamePlan(game) === 'Free'">{{ gamePlan(game) }}</span></td>
@@ -161,8 +178,111 @@
           </footer>
         </div>
       </section>
+
+      <section class="directory-content participants-content" *ngIf="currentView === 'participants'">
+        <div class="directory-summary">
+          <strong>{{ filteredParticipants.length | number }}</strong>
+          <span>matching players</span>
+          <span class="sort-note">Newest first · Select all applies to every filtered page</span>
+        </div>
+
+        <div class="participant-toolbar" aria-label="Filter participants">
+          <label class="participant-search">
+            <span class="search-icon" aria-hidden="true"></span>
+            <input type="search" [(ngModel)]="participantSearch" (ngModelChange)="participantFiltersChanged()" placeholder="Search player, game, host, email" aria-label="Search participants">
+          </label>
+          <label class="participant-filter">
+            <span>GAME</span>
+            <select [(ngModel)]="participantGameFilter" (ngModelChange)="participantFiltersChanged()" aria-label="Filter by game">
+              <option value="">All games</option>
+              <option *ngFor="let game of participantGames" [value]="game.gameUid || game.id">{{ game.name || 'Untitled game' }} · #{{ game.gameId || game.id }}</option>
+            </select>
+          </label>
+          <label class="participant-filter">
+            <span>HOST</span>
+            <select [(ngModel)]="participantHostFilter" (ngModelChange)="participantFiltersChanged()" aria-label="Filter by host">
+              <option value="">All hosts</option>
+              <option *ngFor="let hostId of participantHosts" [value]="hostId">{{ hostName(hostId) }}</option>
+            </select>
+          </label>
+          <label class="participant-filter date-filter">
+            <span>FROM</span>
+            <input type="date" [(ngModel)]="participantFromDate" (ngModelChange)="participantFiltersChanged()" aria-label="Joined from date">
+          </label>
+          <label class="participant-filter date-filter">
+            <span>TO</span>
+            <input type="date" [(ngModel)]="participantToDate" (ngModelChange)="participantFiltersChanged()" aria-label="Joined through date">
+          </label>
+        </div>
+
+        <div class="bulk-action-row">
+          <label class="select-all-control">
+            <input type="checkbox" [checked]="allFilteredParticipantsSelected" [disabled]="!filteredParticipants.length" (change)="toggleAllFilteredParticipants($any($event.target).checked)">
+            <span>Select all {{ filteredParticipants.length | number }} matching</span>
+          </label>
+          <button class="delete-selected-button" type="button" [disabled]="!selectedParticipantIds.size || deletingParticipants" (click)="showDeleteConfirmation = true">
+            <span aria-hidden="true">⌫</span>
+            Delete selected <span *ngIf="selectedParticipantIds.size">({{ selectedParticipantIds.size }})</span>
+          </button>
+        </div>
+
+        <p class="alert error-alert" *ngIf="deleteErrorMessage" role="alert">{{ deleteErrorMessage }}</p>
+
+        <div class="table-panel">
+          <div class="table-scroll participants-table-scroll">
+            <table class="participants-table">
+              <thead>
+                <tr>
+                  <th class="checkbox-column"><span class="visually-hidden">Selection</span></th>
+                  <th>PLAYER</th><th>GAME</th><th>HOST</th><th>STATUS</th><th>JOINED</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let participant of participantRows">
+                  <td class="checkbox-column"><input type="checkbox" [checked]="isParticipantSelected(participant.id)" (change)="setParticipantSelected(participant.id, $any($event.target).checked)" [attr.aria-label]="'Select ' + (participant.name || 'unnamed participant')"></td>
+                  <td><strong class="user-name">{{ participant.name || 'Unnamed participant' }}</strong><small *ngIf="participantEmail(participant)">{{ participantEmail(participant) }}</small><small *ngIf="participant.ticketCode">Ticket {{ participant.ticketCode }}</small></td>
+                  <td><strong class="game-name">{{ participantGameName(participant) }}</strong><small>#{{ participantGameCode(participant) }}</small></td>
+                  <td>{{ participantHostName(participant) }}</td>
+                  <td><span class="status-pill" [class.status-winner]="participantStatus(participant) === 'winner'">{{ participantStatus(participant) }}</span></td>
+                  <td>{{ displayDate(participant.joinedAt) | date:'MMM d, y' }}</td>
+                </tr>
+                <tr *ngIf="!participantRows.length"><td colspan="6" class="empty-state">No participants match these filters.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <footer class="pagination">
+            <span>Showing {{ participantRangeStart }}–{{ participantRangeEnd }} of {{ filteredParticipants.length | number }} players</span>
+            <div><button type="button" (click)="previousParticipantsPage()" [disabled]="participantPage <= 1" aria-label="Previous participants page">Previous</button><span>Page {{ participantPage }} of {{ participantPageCount }}</span><button type="button" (click)="nextParticipantsPage()" [disabled]="participantPage >= participantPageCount" aria-label="Next participants page">Next</button></div>
+          </footer>
+        </div>
+      </section>
     </ng-container>
   </main>
+</div>
+
+<div class="confirmation-backdrop" *ngIf="showDeleteConfirmation" (click)="showDeleteConfirmation = false">
+  <section class="confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-participants-title" (click)="$event.stopPropagation()">
+    <span class="confirmation-symbol" aria-hidden="true">!</span>
+    <h2 id="delete-participants-title">Delete {{ selectedParticipantIds.size }} selected {{ selectedParticipantIds.size === 1 ? 'player' : 'players' }}?</h2>
+    <p>This removes their participant records from their games. Winner and draw history will be preserved.</p>
+    <div class="confirmation-actions">
+      <button type="button" class="cancel-delete-button" (click)="showDeleteConfirmation = false" [disabled]="deletingParticipants">Cancel</button>
+      <button type="button" class="confirm-delete-button" (click)="deleteSelectedParticipants()" [disabled]="deletingParticipants">{{ deletingParticipants ? 'Deleting…' : 'Delete players' }}</button>
+    </div>
+  </section>
+</div>
+
+<div class="confirmation-backdrop" *ngIf="showDeleteGamesConfirmation" (click)="showDeleteGamesConfirmation = false">
+  <section class="confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-games-title" (click)="$event.stopPropagation()">
+    <span class="confirmation-symbol" aria-hidden="true">!</span>
+    <h2 id="delete-games-title">Delete {{ selectedOverviewGameIds.size }} selected {{ selectedOverviewGameIds.size === 1 ? 'game' : 'games' }}?</h2>
+    <p>This permanently deletes the selected game records, their participants and invitations, and the related winner and draw history. User accounts remain unchanged.</p>
+    <p class="alert error-alert" *ngIf="deleteGamesErrorMessage" role="alert">{{ deleteGamesErrorMessage }}</p>
+    <div class="confirmation-actions">
+      <button type="button" class="cancel-delete-button" (click)="showDeleteGamesConfirmation = false" [disabled]="deletingGames">Cancel</button>
+      <button type="button" class="confirm-delete-button" (click)="deleteSelectedOverviewGames()" [disabled]="deletingGames">{{ deletingGames ? 'Deleting…' : 'Delete games' }}</button>
+    </div>
+  </section>
 </div>
 
 <ng-template #gateState>

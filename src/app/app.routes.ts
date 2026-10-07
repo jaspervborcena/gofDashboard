@@ -15,6 +15,7 @@ export const routes: Routes = [
   { path: '', component: AdminDashboardComponent },
   { path: 'admin/games', component: AdminDashboardComponent },
   { path: 'admin/users', component: AdminDashboardComponent },
+  { path: 'admin/participants', component: AdminDashboardComponent },
   { path: 'home', component: HomePageComponent },
   { path: 'signin', component: SignInComponent },
   { path: 'plans', component: PlansPageComponent },
