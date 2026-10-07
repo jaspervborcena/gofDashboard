@@ -94,7 +94,7 @@ service cloud.firestore {
 
     match /invitations/{invitationId} {
       allow create: if ownsGame(request.resource.data.gameUid);
-      allow read: if ownsGame(resource.data.gameUid);
+      allow read: if isAdmin() || ownsGame(resource.data.gameUid);
       allow delete: if isAdmin() || ownsGame(resource.data.gameUid);
     }
 
